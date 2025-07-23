@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level_00
   m_EditorClassIdentifier: 
   LevelID: 0
-  GridDimensions: {x: 4, y: 5}
+  GridDimensions: {x: 6, y: 7}
   DisabledNodes: []
   ExplosionGoal: 20
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
