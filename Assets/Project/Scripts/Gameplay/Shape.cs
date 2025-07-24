@@ -1,45 +1,174 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
-
-/// Bir grup mermiyi bir arada yöneten ana script.
-/// Her mermiye paletten rastgele bir renk atayarak kendini oluşturur.
 
 public class Shape : MonoBehaviour
 {
-    public ShapeData_SO ShapeData { get; private set; }
-    private readonly List<Marble> _marbles = new List<Marble>();
+    [Header("Görsel Efektler")]
+    [SerializeField] private float pickupScale = 1.2f;
+    [SerializeField] private float scaleDuration = 0.1f;
+    [SerializeField] private Vector3 pickupOffset = new Vector3(0, 0.5f, 0);
+    [SerializeField] private GhostController ghostPrefab;
 
+    public ShapeData_SO ShapeData { get; private set; }
     public bool IsPlaced { get; private set; }
-    
+
+    private List<Marble> _marbles = new List<Marble>();
+    private Vector3 _originalPosition;
+    private Transform _originalParent;
+    private Vector3 _originalScale;
+    private GridManager _gridManager;
+    private GhostController _ghostInstance;
+    private Coroutine _activeCoroutine;
+    private List<GridNode> _lastValidNodes;
+
+    private void Awake()
+    {
+        _originalScale = transform.localScale;
+        _gridManager = FindObjectOfType<GridManager>();
+    }
+
     public void Initialize(ShapeData_SO shapeData, ColorPalette_SO palette, GameObject marblePrefab, float hSpacing, float vSpacing)
     {
         this.ShapeData = shapeData;
         gameObject.name = $"Shape_{shapeData.name}";
-
         foreach (Transform child in transform) Destroy(child.gameObject);
         _marbles.Clear();
-
         var localPositions = new List<Vector3>();
-        foreach (var gridPos in shapeData.MarblePositions)
-        {
+        foreach (var gridPos in shapeData.MarblePositions) {
             float worldX = gridPos.x * hSpacing + (gridPos.y % 2 != 0 ? hSpacing / 2f : 0);
             float worldY = gridPos.y * vSpacing;
             localPositions.Add(new Vector3(worldX, worldY, 0));
         }
-
         Vector3 centerOffset = Vector3.zero;
-        foreach (var pos in localPositions) centerOffset += pos;
-        centerOffset /= localPositions.Count;
-        foreach (var pos in localPositions)
-        {
+        if (localPositions.Count > 0) {
+            foreach (var pos in localPositions) centerOffset += pos;
+            centerOffset /= localPositions.Count;
+        }
+        foreach (var pos in localPositions) {
             GameObject marbleObj = Instantiate(marblePrefab, this.transform);
             marbleObj.transform.localPosition = pos - centerOffset;
-
             Marble newMarble = marbleObj.GetComponent<Marble>();
             Color randomColor = palette.Colors[Random.Range(0, palette.Colors.Count)];
             newMarble.SetColor(randomColor);
-            
             _marbles.Add(newMarble);
         }
+    }
+
+    public void OnSelected()
+    {
+        _originalPosition = transform.position;
+        _originalParent = transform.parent;
+        
+        if (_ghostInstance == null)
+        {
+            _ghostInstance = Instantiate(ghostPrefab, _gridManager.transform);
+            _ghostInstance.Initialize(this);
+        }
+        _ghostInstance.gameObject.SetActive(false); // Başlangıçta gizli
+
+        RunCoroutine(PickupRoutine());
+    }
+
+    public void OnDrag(Vector3 newPosition)
+    {
+        // 1. Görsel şekli, parmağı takip edecek şekilde ve ofsetli olarak konumlandır.
+        transform.position = newPosition + pickupOffset;
+
+        // 2. Mantıksal pozisyon, görsel ofsetin çıkarılmış halidir (yani farenin pozisyonu).
+        Vector3 logicalPosition = newPosition;
+        
+        // 3. Hayaletin referans alacağı ana noktayı, MANTIKSAL pozisyona göre bul.
+        GridNode anchorNode = _gridManager.GetNodeAtWorldPosition(logicalPosition);
+        
+        if (anchorNode != null)
+        {
+            _ghostInstance.gameObject.SetActive(true);
+            var targetNodes = _gridManager.GetTargetNodesForShape(this, anchorNode);
+            bool isValid = _gridManager.CheckPlacementValidity(this, targetNodes);
+            
+            _ghostInstance.UpdateGhostPositions(targetNodes);
+            _ghostInstance.SetState(isValid);
+
+            if (isValid)
+            {
+                _lastValidNodes = targetNodes;
+            }
+            else
+            {
+                _lastValidNodes = null;
+            }
+        }
+        else
+        {
+            _ghostInstance.gameObject.SetActive(false);
+            _lastValidNodes = null;
+        }
+    }
+
+    public void OnDropped()
+    {
+        // Hayaleti yok etmiyoruz, sadece saklıyoruz (performans için).
+        if (_ghostInstance != null)
+        {
+            _ghostInstance.gameObject.SetActive(false);
+        }
+
+        if (_lastValidNodes != null)
+        {
+            _gridManager.PlaceShape(this, _lastValidNodes);
+            IsPlaced = true;
+            this.enabled = false;
+        }
+        else
+        {
+            RunCoroutine(ReturnRoutine());
+        }
+    }
+    
+    public List<Marble> GetMarbles() => _marbles;
+
+    private void RunCoroutine(IEnumerator routine)
+    {
+        if (_activeCoroutine != null) StopCoroutine(_activeCoroutine);
+        _activeCoroutine = StartCoroutine(routine);
+    }
+
+    private IEnumerator PickupRoutine()
+    {
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = transform.position + pickupOffset;
+        Vector3 startScale = transform.localScale;
+        Vector3 targetScale = _originalScale * pickupScale;
+        float timer = 0f;
+        while (timer < scaleDuration)
+        {
+            float t = timer / scaleDuration;
+            transform.position = Vector3.Lerp(startPos, targetPos, t);
+            transform.localScale = Vector3.Lerp(startScale, targetScale, t);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = targetPos;
+        transform.localScale = targetScale;
+    }
+
+    private IEnumerator ReturnRoutine()
+    {
+        Vector3 startPos = transform.position;
+        Vector3 startScale = transform.localScale;
+        float timer = 0f;
+        while (timer < scaleDuration)
+        {
+            float t = timer / scaleDuration;
+            transform.position = Vector3.Lerp(startPos, _originalPosition, t);
+            transform.localScale = Vector3.Lerp(startScale, _originalScale, t);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = _originalPosition;
+        transform.localScale = _originalScale;
+        transform.SetParent(_originalParent);
     }
 }
