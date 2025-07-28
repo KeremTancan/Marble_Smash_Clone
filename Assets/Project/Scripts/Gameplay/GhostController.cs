@@ -16,29 +16,24 @@ public class GhostController : MonoBehaviour
         foreach (var originalMarble in shapeToCopy.GetMarbles())
         {
             GameObject ghostPart = Instantiate(originalMarble.gameObject, transform);
-            // Kopyanın ölçeğini, orijinalin yerel ölçeğiyle eşitle.
             ghostPart.transform.localScale = originalMarble.transform.localScale;
             ghostPart.GetComponent<Collider>().enabled = false;
             _ghostParts.Add(ghostPart);
         }
     }
 
-    public void UpdateGhostPositions(List<GridNode> targetNodes)
+    public void UpdateGhostPositions(Dictionary<Marble, GridNode> targetPlacement)
     {
-        // Her hayalet parçasını, ilgili hedef noktanın pozisyonuna taşı.
-        for (int i = 0; i < _ghostParts.Count; i++)
+        foreach (var part in _ghostParts) part.SetActive(false);
+        int i = 0;
+        foreach (var pair in targetPlacement)
         {
-            if (i < targetNodes.Count && targetNodes[i] != null)
+            if (i < _ghostParts.Count)
             {
                 _ghostParts[i].SetActive(true);
-                _ghostParts[i].transform.position = targetNodes[i].transform.position;
+                _ghostParts[i].transform.position = pair.Value.transform.position; 
             }
-            else
-            {
-                // Eğer şekil ızgaranın dışına taşıyorsa,
-                // ilgili hayalet parçalarını gizle.
-                _ghostParts[i].SetActive(false);
-            }
+            i++;
         }
     }
 

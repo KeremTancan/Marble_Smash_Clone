@@ -18,38 +18,63 @@ public class GridManager : MonoBehaviour
     private readonly Dictionary<Vector2Int, GridNode> _grid = new Dictionary<Vector2Int, GridNode>();
     private Transform _connectionsParent;
 
-    public GridNode GetNodeAtWorldPosition(Vector3 worldPosition)
+    public GridNode GetClosestNode(Vector3 worldPosition)
     {
-        Vector3 localPos = transform.InverseTransformPoint(worldPosition);
-        int y = Mathf.RoundToInt(localPos.y / verticalSpacing);
-        float xOffset = (y % 2 != 0) ? 0.5f : 0;
-        int x = Mathf.RoundToInt(localPos.x / horizontalSpacing - xOffset);
-        _grid.TryGetValue(new Vector2Int(x, y), out GridNode node);
-        return node;
-    }
-
-    public List<GridNode> GetTargetNodesForShape(Shape shape, GridNode anchorNode)
-    {
-        var targetNodes = new List<GridNode>();
-        if (anchorNode == null) return targetNodes;
-
-        Vector2Int rootShapePos = shape.ShapeData.MarblePositions.First();
-        Vector2Int shapeRootGridPos = anchorNode.GridPosition - rootShapePos;
-
-        foreach (var marblePos in shape.ShapeData.MarblePositions)
+        if (_grid.Count == 0) return null;
+        GridNode closestNode = null;
+        float minDistanceSqr = float.MaxValue;
+        foreach (GridNode node in _grid.Values)
         {
-            Vector2Int targetGridPos = shapeRootGridPos + marblePos;
-            if (_grid.TryGetValue(targetGridPos, out GridNode node))
+            float distanceSqr = (node.transform.position - worldPosition).sqrMagnitude;
+            if (distanceSqr < minDistanceSqr)
             {
-                targetNodes.Add(node);
+                minDistanceSqr = distanceSqr;
+                closestNode = node;
             }
         }
-        return targetNodes;
+        return closestNode;
     }
 
-    public bool CheckPlacementValidity(Shape shape, List<GridNode> targetNodes)
+    public Dictionary<Marble, GridNode> GetTargetPlacement(Shape shape)
     {
-        if (targetNodes.Count < shape.GetMarbles().Count) return false;
+        var placement = new Dictionary<Marble, GridNode>();
+        var marbles = shape.GetMarbles();
+        if (marbles.Count == 0) return placement;
+
+        // 1. Şeklin merkez mermisinin en yakın olduğu node'u bul (bu bizim çapa noktamız).
+        Marble centerMarble = marbles[0];
+        GridNode anchorNode = GetClosestNode(centerMarble.transform.position);
+        if (anchorNode == null) return placement; // Izgara üzerinde değilsek boş döndür.
+
+        // 2. Diğer mermilerin, çapa mermisine göre olan pozisyon farklarını bul.
+        Vector3 anchorMarblePos = centerMarble.transform.position;
+        for (int i = 0; i < marbles.Count; i++)
+        {
+            Marble currentMarble = marbles[i];
+            Vector3 offset = currentMarble.transform.position - anchorMarblePos;
+            
+            // 3. Her merminin hedef pozisyonunu, çapa noktasının pozisyonuna bu farkı ekleyerek bul.
+            Vector3 targetWorldPos = anchorNode.transform.position + offset;
+
+            // 4. Bu hedefe en yakın node'u bul ve sözlüğe ekle.
+            GridNode targetNode = GetClosestNode(targetWorldPos);
+            if (targetNode != null)
+            {
+                placement[currentMarble] = targetNode;
+            }
+        }
+        return placement;
+    }
+
+    public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
+    {
+        // Hedef noktaların benzersiz olup olmadığını kontrol et.
+        var targetNodes = placement.Values.ToList();
+        if (targetNodes.Count != targetNodes.Distinct().Count())
+        {
+            return false; // Eğer aynı node'a birden fazla mermer gitmeye çalışıyorsa, geçersiz.
+        }
+        // Hedef noktalardan herhangi biri dolu mu?
         foreach (var node in targetNodes)
         {
             if (node.IsOccupied) return false;
@@ -57,13 +82,12 @@ public class GridManager : MonoBehaviour
         return true;
     }
     
-    public void PlaceShape(Shape shape, List<GridNode> targetNodes)
+    public void PlaceShape(Shape shape, Dictionary<Marble, GridNode> placement)
     {
-        var marblesToPlace = shape.GetMarbles();
-        for (int i = 0; i < targetNodes.Count; i++)
+        foreach (var pair in placement)
         {
-            Marble marbleToMove = marblesToPlace[i];
-            GridNode destinationNode = targetNodes[i];
+            Marble marbleToMove = pair.Key;
+            GridNode destinationNode = pair.Value;
 
             marbleToMove.transform.position = destinationNode.transform.position;
             marbleToMove.transform.SetParent(this.transform, true);

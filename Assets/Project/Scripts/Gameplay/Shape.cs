@@ -21,7 +21,7 @@ public class Shape : MonoBehaviour
     private GridManager _gridManager;
     private GhostController _ghostInstance;
     private Coroutine _activeCoroutine;
-    private List<GridNode> _lastValidNodes;
+    private Dictionary<Marble, GridNode> _lastValidPlacement;
 
     private void Awake()
     {
@@ -63,61 +63,52 @@ public class Shape : MonoBehaviour
         
         if (_ghostInstance == null)
         {
-            _ghostInstance = Instantiate(ghostPrefab, _gridManager.transform);
+            _ghostInstance = Instantiate(ghostPrefab);
             _ghostInstance.Initialize(this);
         }
-        _ghostInstance.gameObject.SetActive(false); // Başlangıçta gizli
+        _ghostInstance.gameObject.SetActive(false);
 
         RunCoroutine(PickupRoutine());
     }
 
     public void OnDrag(Vector3 newPosition)
     {
-        // 1. Görsel şekli, parmağı takip edecek şekilde ve ofsetli olarak konumlandır.
         transform.position = newPosition + pickupOffset;
-
-        // 2. Mantıksal pozisyon, görsel ofsetin çıkarılmış halidir (yani farenin pozisyonu).
-        Vector3 logicalPosition = newPosition;
-        
-        // 3. Hayaletin referans alacağı ana noktayı, MANTIKSAL pozisyona göre bul.
-        GridNode anchorNode = _gridManager.GetNodeAtWorldPosition(logicalPosition);
-        
-        if (anchorNode != null)
+        var targetPlacement = _gridManager.GetTargetPlacement(this);
+        if (targetPlacement.Count > 0)
         {
             _ghostInstance.gameObject.SetActive(true);
-            var targetNodes = _gridManager.GetTargetNodesForShape(this, anchorNode);
-            bool isValid = _gridManager.CheckPlacementValidity(this, targetNodes);
+            bool isValid = _gridManager.CheckPlacementValidity(targetPlacement);
             
-            _ghostInstance.UpdateGhostPositions(targetNodes);
+            _ghostInstance.UpdateGhostPositions(targetPlacement);
             _ghostInstance.SetState(isValid);
 
             if (isValid)
             {
-                _lastValidNodes = targetNodes;
+                _lastValidPlacement = targetPlacement;
             }
             else
             {
-                _lastValidNodes = null;
+                _lastValidPlacement = null;
             }
         }
         else
         {
             _ghostInstance.gameObject.SetActive(false);
-            _lastValidNodes = null;
+            _lastValidPlacement = null;
         }
     }
 
     public void OnDropped()
     {
-        // Hayaleti yok etmiyoruz, sadece saklıyoruz (performans için).
         if (_ghostInstance != null)
         {
             _ghostInstance.gameObject.SetActive(false);
         }
 
-        if (_lastValidNodes != null)
+        if (_lastValidPlacement != null)
         {
-            _gridManager.PlaceShape(this, _lastValidNodes);
+            _gridManager.PlaceShape(this, _lastValidPlacement);
             IsPlaced = true;
             this.enabled = false;
         }
