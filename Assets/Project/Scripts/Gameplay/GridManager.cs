@@ -21,6 +21,65 @@ public class GridManager : MonoBehaviour
     public GridNode GetClosestNode(Vector3 worldPosition)
     {
         if (_grid.Count == 0) return null;
+
+        GridNode closestNode = null;
+        float minDistanceSqr = float.MaxValue;
+
+        foreach (GridNode node in _grid.Values)
+        {
+            float distanceSqr = (node.transform.position - worldPosition).sqrMagnitude;
+            if (distanceSqr < minDistanceSqr)
+            {
+                minDistanceSqr = distanceSqr;
+                closestNode = node;
+            }
+        }
+
+        // YENİ EKLENEN KISIM: Sadece belirli bir mesafedeki nodeları geçerli say
+        // Eğer en yakın node bile çok uzaktaysa (burada aralığın 1.5 katı alındı), null döndür.
+        float threshold = horizontalSpacing * 1.5f;
+        if (minDistanceSqr > threshold * threshold)
+        {
+            return null;
+        }
+
+        return closestNode;
+    }
+
+    public Dictionary<Marble, GridNode> GetTargetPlacement(Shape shape)
+    {
+        var placement = new Dictionary<Marble, GridNode>();
+        var marbles = shape.GetMarbles();
+        if (marbles.Count == 0) return placement;
+
+        Marble centerMarble = marbles[0];
+        GridNode anchorNode = GetClosestNode(centerMarble.transform.position);
+        
+        // Eğer çapa atayacak kadar yakın bir node bulunamazsa, boş sözlük döndür.
+        if (anchorNode == null) return placement;
+
+        Vector3 anchorMarblePos = centerMarble.transform.position;
+        for (int i = 0; i < marbles.Count; i++)
+        {
+            Marble currentMarble = marbles[i];
+            Vector3 offset = currentMarble.transform.position - anchorMarblePos;
+            Vector3 targetWorldPos = anchorNode.transform.position + offset;
+            
+            // Diğer mermiler için en yakın node'u bulurken mesafe kontrolü yapmaya gerek yok,
+            // çünkü çapa noktası zaten ızgaraya yeterince yakın.
+            GridNode targetNode = FindNearestNodeUnconditionally(targetWorldPos);
+            if (targetNode != null)
+            {
+                placement[currentMarble] = targetNode;
+            }
+        }
+        return placement;
+    }
+
+    // Mesafe kontrolü yapmadan en yakın node'u bulan yardımcı metot
+    private GridNode FindNearestNodeUnconditionally(Vector3 worldPosition)
+    {
+        if (_grid.Count == 0) return null;
         GridNode closestNode = null;
         float minDistanceSqr = float.MaxValue;
         foreach (GridNode node in _grid.Values)
@@ -35,46 +94,14 @@ public class GridManager : MonoBehaviour
         return closestNode;
     }
 
-    public Dictionary<Marble, GridNode> GetTargetPlacement(Shape shape)
-    {
-        var placement = new Dictionary<Marble, GridNode>();
-        var marbles = shape.GetMarbles();
-        if (marbles.Count == 0) return placement;
-
-        // 1. Şeklin merkez mermisinin en yakın olduğu node'u bul (bu bizim çapa noktamız).
-        Marble centerMarble = marbles[0];
-        GridNode anchorNode = GetClosestNode(centerMarble.transform.position);
-        if (anchorNode == null) return placement; // Izgara üzerinde değilsek boş döndür.
-
-        // 2. Diğer mermilerin, çapa mermisine göre olan pozisyon farklarını bul.
-        Vector3 anchorMarblePos = centerMarble.transform.position;
-        for (int i = 0; i < marbles.Count; i++)
-        {
-            Marble currentMarble = marbles[i];
-            Vector3 offset = currentMarble.transform.position - anchorMarblePos;
-            
-            // 3. Her merminin hedef pozisyonunu, çapa noktasının pozisyonuna bu farkı ekleyerek bul.
-            Vector3 targetWorldPos = anchorNode.transform.position + offset;
-
-            // 4. Bu hedefe en yakın node'u bul ve sözlüğe ekle.
-            GridNode targetNode = GetClosestNode(targetWorldPos);
-            if (targetNode != null)
-            {
-                placement[currentMarble] = targetNode;
-            }
-        }
-        return placement;
-    }
 
     public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
     {
-        // Hedef noktaların benzersiz olup olmadığını kontrol et.
         var targetNodes = placement.Values.ToList();
         if (targetNodes.Count != targetNodes.Distinct().Count())
         {
-            return false; // Eğer aynı node'a birden fazla mermer gitmeye çalışıyorsa, geçersiz.
+            return false;
         }
-        // Hedef noktalardan herhangi biri dolu mu?
         foreach (var node in targetNodes)
         {
             if (node.IsOccupied) return false;
@@ -94,7 +121,89 @@ public class GridManager : MonoBehaviour
             destinationNode.SetOccupied(marbleToMove);
         }
         Destroy(shape.gameObject);
+
+        // Şekil yerleştirildikten sonra patlatma kontrolü yap
+        foreach (var pair in placement)
+        {
+            CheckForMatches(pair.Value);
+        }
     }
+    
+    #region Match & Explosion Logic
+    private void CheckForMatches(GridNode startNode)
+    {
+        if (startNode == null || !startNode.IsOccupied)
+            return;
+
+        List<GridNode> connectedNodes = new List<GridNode>();
+        Queue<GridNode> nodesToVisit = new Queue<GridNode>();
+        HashSet<GridNode> visitedNodes = new HashSet<GridNode>();
+
+        Color matchColor = startNode.PlacedMarble.MarbleColor;
+        nodesToVisit.Enqueue(startNode);
+        visitedNodes.Add(startNode);
+        
+        while (nodesToVisit.Count > 0)
+        {
+            GridNode currentNode = nodesToVisit.Dequeue();
+            connectedNodes.Add(currentNode);
+
+            foreach (GridNode neighbor in GetNeighbors(currentNode))
+            {
+                if (neighbor != null && neighbor.IsOccupied && !visitedNodes.Contains(neighbor) && neighbor.PlacedMarble.MarbleColor == matchColor)
+                {
+                    visitedNodes.Add(neighbor);
+                    nodesToVisit.Enqueue(neighbor);
+                }
+            }
+        }
+        
+        if (connectedNodes.Count >= 5)
+        {
+            foreach (GridNode node in connectedNodes)
+            {
+                Destroy(node.PlacedMarble.gameObject);
+                node.SetVacant();
+            }
+            Debug.Log(connectedNodes.Count + " adet top patlatıldı!");
+        }
+    }
+
+    private List<GridNode> GetNeighbors(GridNode node)
+    {
+        List<GridNode> neighbors = new List<GridNode>();
+        Vector2Int[] neighborOffsets;
+        
+        if (node.GridPosition.y % 2 == 0)
+        {
+            neighborOffsets = new Vector2Int[]
+            {
+                new Vector2Int(-1, 0), new Vector2Int(1, 0),
+                new Vector2Int(0, 1), new Vector2Int(-1, 1),
+                new Vector2Int(0, -1), new Vector2Int(-1, -1)
+            };
+        }
+        else
+        {
+            neighborOffsets = new Vector2Int[]
+            {
+                new Vector2Int(-1, 0), new Vector2Int(1, 0),
+                new Vector2Int(1, 1), new Vector2Int(0, 1),
+                new Vector2Int(1, -1), new Vector2Int(0, -1)
+            };
+        }
+
+        foreach (var offset in neighborOffsets)
+        {
+            if (_grid.TryGetValue(node.GridPosition + offset, out GridNode neighborNode))
+            {
+                neighbors.Add(neighborNode);
+            }
+        }
+        return neighbors;
+    }
+    #endregion
+
 
     #region Unchanged Code
     private void Start()
