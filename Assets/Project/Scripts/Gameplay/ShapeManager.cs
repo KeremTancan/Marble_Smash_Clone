@@ -19,7 +19,7 @@ public class ShapeManager : MonoBehaviour
     [SerializeField] private float verticalSpacing = 0.866f;
 
     private ColorPalette_SO _currentPalette;
-    private int _shapesLeftInQueue; // Kuyrukta kaç şekil kaldığını sayan değişken
+    private int _shapesLeftInQueue;
 
     private void OnEnable()
     {
@@ -37,7 +37,6 @@ public class ShapeManager : MonoBehaviour
 
         _currentPalette = levelData.AvailableColors;
         
-        // Başlangıçta tüm slotları temizle
         foreach (var slot in queueSlots)
         {
             foreach (Transform child in slot) Destroy(child.gameObject);
@@ -46,20 +45,16 @@ public class ShapeManager : MonoBehaviour
         SpawnNewShapeBatch();
     }
 
-    // Bir şekil kullanıldığında bu metot çağrılır
-    private void HandleShapePlaced()
+    
+    private void HandleShapePlaced() // Bir şekil kullanıldığında bu metot çağrılır
     {
-        _shapesLeftInQueue--; // Kalan şekil sayısını azalt
+        _shapesLeftInQueue--; 
 
-        // Eğer kuyrukta hiç şekil kalmadıysa, yeni bir üçlü set oluştur
         if (_shapesLeftInQueue <= 0)
         {
-            // Küçük bir gecikme ile yeni şekilleri getirelim ki daha akıcı görünsün
-            StartCoroutine(SpawnBatchWithDelay(0.5f));
+            SpawnNewShapeBatch();
         }
     }
-
-    // Yeni bir üçlü şekil seti oluşturan ana metot
     private void SpawnNewShapeBatch()
     {
         if (queueSlots.Length == 0) return;
@@ -68,10 +63,9 @@ public class ShapeManager : MonoBehaviour
         {
             SpawnSingleShape(slot);
         }
-        _shapesLeftInQueue = queueSlots.Length; // Sayacı yeniden ayarla
+        _shapesLeftInQueue = queueSlots.Length; 
     }
 
-    // Tek bir slota yeni bir şekil oluşturan yardımcı metot
     private void SpawnSingleShape(Transform slot)
     {
         if (slot == null || _currentPalette == null) return;
@@ -82,12 +76,7 @@ public class ShapeManager : MonoBehaviour
         newShape.Initialize(randomShapeData, _currentPalette, marblePrefab, horizontalSpacing, verticalSpacing);
     }
     
-    // Gecikmeli olarak yeni set getirmeyi sağlayan Coroutine
-    private IEnumerator SpawnBatchWithDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        SpawnNewShapeBatch();
-    }
+    
 
     private bool ValidateSettings()
     {

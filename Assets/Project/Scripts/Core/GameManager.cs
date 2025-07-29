@@ -16,14 +16,11 @@ public class GameManager : MonoBehaviour
 
     public void StartLevel()
     {
-        // Gerekli yöneticilerin ve verilerin atanıp atanmadığını kontrol et
         if (gridManager == null || shapeManager == null || currentLevelData == null)
         {
             Debug.LogError("GameManager'a gerekli yönetici veya seviye verisi atanmamış!");
             return;
         }
-
-        // Diğer yöneticileri, seçilen seviye verisiyle başlat
         gridManager.GenerateGrid(currentLevelData);
         shapeManager.PrepareInitialShapes(currentLevelData);
     }

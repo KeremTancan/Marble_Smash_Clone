@@ -9,10 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a6c1141a367aac44b62fe181186f6d5, type: 3}
-  m_Name: Palette_Default
+  m_Script: {fileID: 11500000, guid: 4608192a44793934e9aea303e88b0c9c, type: 3}
+  m_Name: Level_00 1
   m_EditorClassIdentifier: 
-  Colors:
-  - {r: 0.041384827, g: 0.5849056, b: 0.11857124, a: 0}
-  - {r: 0.2683339, g: 0.2713121, b: 0.8490566, a: 0}
-  - {r: 0.8279329, g: 0.8509804, b: 0.26666665, a: 0}
+  LevelID: 0
+  GridDimensions: {x: 8, y: 10}
+  DisabledNodes: []
+  ExplosionGoal: 20
+  AvailableColors: {fileID: 0}
+  Reward: 50

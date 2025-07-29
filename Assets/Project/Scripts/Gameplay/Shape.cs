@@ -112,6 +112,7 @@ public class Shape : MonoBehaviour
             _gridManager.PlaceShape(this, _lastValidPlacement);
             IsPlaced = true;
             this.enabled = false;
+            Destroy(_ghostInstance.gameObject);
         }
         else
         {

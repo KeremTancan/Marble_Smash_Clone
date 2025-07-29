@@ -10,7 +10,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private GridNode gridNodePrefab;
     [SerializeField] private LineRenderer connectionPrefab;
     [Header("Yöneticiler")]
-    [SerializeField] private ConnectionManager connectionManager; // YENİ EKLENDİ
+    [SerializeField] private ConnectionManager connectionManager;
     [Header("Güvenli Alan Ayarları")]
     [SerializeField] private Rect safeArea = new Rect(-4f, -4f, 8f, 8f);
     [Header("Izgara Ayarları")]
@@ -19,8 +19,6 @@ public class GridManager : MonoBehaviour
     
     private readonly Dictionary<Vector2Int, GridNode> _grid = new Dictionary<Vector2Int, GridNode>();
     private Transform _connectionsParent;
-
-    // ConnectionManager'ın grid verisine erişmesi için public metot
     public Dictionary<Vector2Int, GridNode> GetGrid() => _grid;
 
     public GridNode GetClosestNode(Vector3 worldPosition)
@@ -110,9 +108,6 @@ public class GridManager : MonoBehaviour
     
     public void PlaceShape(Shape shape, Dictionary<Marble, GridNode> placement)
     {
-        // Artık slota ihtiyacımız olmadığı için bu satırı silebiliriz veya yoruma alabiliriz.
-        // Transform emptySlot = shape.OriginalParent; 
-    
         foreach (var pair in placement)
         {
             Marble marbleToMove = pair.Key;
@@ -130,8 +125,6 @@ public class GridManager : MonoBehaviour
         }
     
         connectionManager.UpdateAllConnections();
-
-        // YENİ HALİ: Parametre olmadan olayı tetikle
         EventManager.RaiseOnShapePlaced();
     }
     
