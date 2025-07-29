@@ -22,7 +22,8 @@ public class Shape : MonoBehaviour
     private GhostController _ghostInstance;
     private Coroutine _activeCoroutine;
     private Dictionary<Marble, GridNode> _lastValidPlacement;
-
+    public Transform OriginalParent { get; private set; }
+    
     private void Awake()
     {
         _originalScale = transform.localScale;
@@ -59,8 +60,8 @@ public class Shape : MonoBehaviour
     public void OnSelected()
     {
         _originalPosition = transform.position;
-        _originalParent = transform.parent;
-        
+        OriginalParent = transform.parent;
+
         if (_ghostInstance == null)
         {
             _ghostInstance = Instantiate(ghostPrefab);

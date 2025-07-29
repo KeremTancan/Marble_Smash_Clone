@@ -110,6 +110,9 @@ public class GridManager : MonoBehaviour
     
     public void PlaceShape(Shape shape, Dictionary<Marble, GridNode> placement)
     {
+        // Artık slota ihtiyacımız olmadığı için bu satırı silebiliriz veya yoruma alabiliriz.
+        // Transform emptySlot = shape.OriginalParent; 
+    
         foreach (var pair in placement)
         {
             Marble marbleToMove = pair.Key;
@@ -120,14 +123,16 @@ public class GridManager : MonoBehaviour
             destinationNode.SetOccupied(marbleToMove);
         }
         Destroy(shape.gameObject);
-        
+    
         foreach (var pair in placement)
         {
             CheckForMatches(pair.Value);
         }
+    
+        connectionManager.UpdateAllConnections();
 
-        // Toplar yerleştirildikten sonra tüm bağlantıları güncelle
-        connectionManager.UpdateAllConnections(); // YENİ EKLENDİ
+        // YENİ HALİ: Parametre olmadan olayı tetikle
+        EventManager.RaiseOnShapePlaced();
     }
     
     #region Match & Explosion Logic
@@ -208,17 +213,37 @@ public class GridManager : MonoBehaviour
         return neighbors;
     }
     #endregion
-
-
-    #region Unchanged Code
-    private void Start()
+    
+    public void GenerateGrid(LevelData_SO levelData) 
     {
-        if (currentLevelData == null || gridNodePrefab == null || connectionPrefab == null)
+        if (levelData == null || gridNodePrefab == null || connectionPrefab == null)
         {
-            Debug.LogError("GridManager'da gerekli prefab veya veri dosyaları atanmamış!", this);
+            Debug.LogError("GridManager'a gerekli prefab veya veri dosyaları atanmamış!", this);
             return;
         }
-        GenerateGrid();
+
+        ClearGrid();
+        _connectionsParent = new GameObject("Grid_Connections").transform;
+        _connectionsParent.SetParent(this.transform);
+        for (int y = 0; y < levelData.GridDimensions.y; y++) // currentLevelData yerine levelData kullan
+        {
+            for (int x = 0; x < levelData.GridDimensions.x; x++) // currentLevelData yerine levelData kullan
+            {
+                var gridPos = new Vector2Int(x, y);
+                if (levelData.DisabledNodes.Contains(gridPos)) continue; // currentLevelData yerine levelData kullan
+                float worldX = x * horizontalSpacing + (y % 2 != 0 ? horizontalSpacing / 2f : 0);
+                float worldY = y * verticalSpacing;
+                var worldPosition = new Vector3(worldX, worldY, 0);
+                GridNode newNode = Instantiate(gridNodePrefab, worldPosition, Quaternion.identity, this.transform);
+                newNode.Initialize(gridPos);
+                _grid.Add(gridPos, newNode);
+            }
+        }
+        FitGridToSafeArea();
+        foreach (GridNode node in _grid.Values)
+        {
+            ConnectToNeighbors(node);
+        }
     }
     
     private void GenerateGrid()
@@ -311,5 +336,4 @@ public class GridManager : MonoBehaviour
         foreach (var node in _grid.Values) if(node != null) Destroy(node.gameObject);
         _grid.Clear();
     }
-    #endregion
 }
