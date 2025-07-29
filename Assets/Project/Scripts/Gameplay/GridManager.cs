@@ -9,6 +9,8 @@ public class GridManager : MonoBehaviour
     [Header("Prefabs")]
     [SerializeField] private GridNode gridNodePrefab;
     [SerializeField] private LineRenderer connectionPrefab;
+    [Header("Yöneticiler")]
+    [SerializeField] private ConnectionManager connectionManager; // YENİ EKLENDİ
     [Header("Güvenli Alan Ayarları")]
     [SerializeField] private Rect safeArea = new Rect(-4f, -4f, 8f, 8f);
     [Header("Izgara Ayarları")]
@@ -17,6 +19,9 @@ public class GridManager : MonoBehaviour
     
     private readonly Dictionary<Vector2Int, GridNode> _grid = new Dictionary<Vector2Int, GridNode>();
     private Transform _connectionsParent;
+
+    // ConnectionManager'ın grid verisine erişmesi için public metot
+    public Dictionary<Vector2Int, GridNode> GetGrid() => _grid;
 
     public GridNode GetClosestNode(Vector3 worldPosition)
     {
@@ -34,9 +39,7 @@ public class GridManager : MonoBehaviour
                 closestNode = node;
             }
         }
-
-        // YENİ EKLENEN KISIM: Sadece belirli bir mesafedeki nodeları geçerli say
-        // Eğer en yakın node bile çok uzaktaysa (burada aralığın 1.5 katı alındı), null döndür.
+        
         float threshold = horizontalSpacing * 1.5f;
         if (minDistanceSqr > threshold * threshold)
         {
@@ -55,7 +58,6 @@ public class GridManager : MonoBehaviour
         Marble centerMarble = marbles[0];
         GridNode anchorNode = GetClosestNode(centerMarble.transform.position);
         
-        // Eğer çapa atayacak kadar yakın bir node bulunamazsa, boş sözlük döndür.
         if (anchorNode == null) return placement;
 
         Vector3 anchorMarblePos = centerMarble.transform.position;
@@ -64,9 +66,7 @@ public class GridManager : MonoBehaviour
             Marble currentMarble = marbles[i];
             Vector3 offset = currentMarble.transform.position - anchorMarblePos;
             Vector3 targetWorldPos = anchorNode.transform.position + offset;
-            
-            // Diğer mermiler için en yakın node'u bulurken mesafe kontrolü yapmaya gerek yok,
-            // çünkü çapa noktası zaten ızgaraya yeterince yakın.
+
             GridNode targetNode = FindNearestNodeUnconditionally(targetWorldPos);
             if (targetNode != null)
             {
@@ -75,8 +75,7 @@ public class GridManager : MonoBehaviour
         }
         return placement;
     }
-
-    // Mesafe kontrolü yapmadan en yakın node'u bulan yardımcı metot
+    
     private GridNode FindNearestNodeUnconditionally(Vector3 worldPosition)
     {
         if (_grid.Count == 0) return null;
@@ -121,12 +120,14 @@ public class GridManager : MonoBehaviour
             destinationNode.SetOccupied(marbleToMove);
         }
         Destroy(shape.gameObject);
-
-        // Şekil yerleştirildikten sonra patlatma kontrolü yap
+        
         foreach (var pair in placement)
         {
             CheckForMatches(pair.Value);
         }
+
+        // Toplar yerleştirildikten sonra tüm bağlantıları güncelle
+        connectionManager.UpdateAllConnections(); // YENİ EKLENDİ
     }
     
     #region Match & Explosion Logic
@@ -162,10 +163,16 @@ public class GridManager : MonoBehaviour
         {
             foreach (GridNode node in connectedNodes)
             {
-                Destroy(node.PlacedMarble.gameObject);
-                node.SetVacant();
+                if (node.PlacedMarble != null)
+                {
+                    Destroy(node.PlacedMarble.gameObject);
+                    node.SetVacant();
+                }
             }
             Debug.Log(connectedNodes.Count + " adet top patlatıldı!");
+
+            // Patlamadan sonra bağlantıları tekrar güncelle
+            connectionManager.UpdateAllConnections(); // YENİ EKLENDİ
         }
     }
 
@@ -176,8 +183,7 @@ public class GridManager : MonoBehaviour
         
         if (node.GridPosition.y % 2 == 0)
         {
-            neighborOffsets = new Vector2Int[]
-            {
+            neighborOffsets = new Vector2Int[] {
                 new Vector2Int(-1, 0), new Vector2Int(1, 0),
                 new Vector2Int(0, 1), new Vector2Int(-1, 1),
                 new Vector2Int(0, -1), new Vector2Int(-1, -1)
@@ -185,8 +191,7 @@ public class GridManager : MonoBehaviour
         }
         else
         {
-            neighborOffsets = new Vector2Int[]
-            {
+            neighborOffsets = new Vector2Int[] {
                 new Vector2Int(-1, 0), new Vector2Int(1, 0),
                 new Vector2Int(1, 1), new Vector2Int(0, 1),
                 new Vector2Int(1, -1), new Vector2Int(0, -1)
@@ -219,7 +224,7 @@ public class GridManager : MonoBehaviour
     private void GenerateGrid()
     {
         ClearGrid();
-        _connectionsParent = new GameObject("Connections").transform;
+        _connectionsParent = new GameObject("Grid_Connections").transform; // İsmi değiştirdim karışmasın diye
         _connectionsParent.SetParent(this.transform);
         for (int y = 0; y < currentLevelData.GridDimensions.y; y++)
         {
@@ -295,7 +300,7 @@ public class GridManager : MonoBehaviour
         line.positionCount = 2;
         line.SetPosition(0, from.transform.position);
         line.SetPosition(1, to.transform.position);
-        line.gameObject.name = $"Conn_{from.GridPosition}_{to.GridPosition}";
+        line.gameObject.name = $"GridConn_{from.GridPosition}_{to.GridPosition}";
     }
 
     private void ClearGrid()
