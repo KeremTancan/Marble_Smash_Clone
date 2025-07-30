@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridManager: {fileID: 1714769846}
-  connectionPrefab: {fileID: 1467275519946246099, guid: b3e3ae802f656b04db7799a4d3cc2576, type: 3}
+  pipePrefab: {fileID: 1090063024072792326, guid: 5ee3708141a2fec449b22da8af8b0df2, type: 3}
 --- !u!4 &254868779
 Transform:
   m_ObjectHideFlags: 0

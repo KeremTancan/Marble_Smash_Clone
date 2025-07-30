@@ -1,13 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class ConnectionManager : MonoBehaviour
 {
     [Header("Referanslar")]
     [SerializeField] private GridManager gridManager;
-    [SerializeField] private LineRenderer connectionPrefab;
+    [SerializeField] private PipeConnector pipePrefab;
 
     private Transform _connectionsParent;
+    
+    private Dictionary<string, PipeConnector> _activePipes = new Dictionary<string, PipeConnector>();
 
     void Start()
     {
@@ -17,73 +20,94 @@ public class ConnectionManager : MonoBehaviour
     
     public void UpdateAllConnections()
     {
-        foreach (Transform child in _connectionsParent)
-        {
-            Destroy(child.gameObject);
-        }
-
         if (gridManager == null) return;
-
         var grid = gridManager.GetGrid();
         if (grid == null) return;
-        
-        foreach (GridNode node in grid.Values)
+
+        HashSet<string> requiredConnections = FindAllRequiredConnections(grid);
+
+        var keysToRemove = _activePipes.Keys.Except(requiredConnections).ToList();
+        foreach (var key in keysToRemove)
         {
-            if (!node.IsOccupied) continue;
-            
-            var neighborsToCheck = GetNeighborsToCheck(node);
-            foreach (GridNode neighbor in neighborsToCheck)
+            if (_activePipes.TryGetValue(key, out PipeConnector pipeToDestroy))
             {
-                if (neighbor.IsOccupied && neighbor.PlacedMarble.MarbleColor == node.PlacedMarble.MarbleColor)
+                Destroy(pipeToDestroy.gameObject);
+            }
+            _activePipes.Remove(key);
+        }
+
+        // 3. Henüz oluşturulmamış YENİ bağlantıları bul, oluştur ve canlandır
+        foreach (var key in requiredConnections)
+        {
+            if (!_activePipes.ContainsKey(key))
+            {
+                // Anahtardan nodeları geri çöz
+                string[] positions = key.Split('_');
+                Vector2Int pos1 = StringToVector2Int(positions[0]);
+                Vector2Int pos2 = StringToVector2Int(positions[1]);
+
+                if (grid.TryGetValue(pos1, out GridNode node1) && grid.TryGetValue(pos2, out GridNode node2))
                 {
-                    DrawConnection(node, neighbor);
+                    AnimatePipeConnection(node1, node2, key);
                 }
             }
         }
     }
 
-    private void DrawConnection(GridNode from, GridNode to)
+    private HashSet<string> FindAllRequiredConnections(Dictionary<Vector2Int, GridNode> grid)
     {
-        LineRenderer line = Instantiate(connectionPrefab, _connectionsParent);
-        line.positionCount = 2;
-        line.SetPosition(0, from.transform.position);
-        line.SetPosition(1, to.transform.position);
+        var requiredKeys = new HashSet<string>();
+        var visitedNodes = new HashSet<GridNode>();
 
-        Color marbleColor = from.PlacedMarble.MarbleColor;
-
-        MaterialPropertyBlock propBlock = new MaterialPropertyBlock();
-        line.GetPropertyBlock(propBlock);
-        propBlock.SetColor("_BaseColor", marbleColor);
-        line.SetPropertyBlock(propBlock);
-
-        line.widthMultiplier = 0.3f; 
-        line.sortingOrder = 1; 
-        line.numCapVertices = 4; 
-        
-        line.gameObject.name = $"MarbleConn_{from.GridPosition}_{to.GridPosition}";
-    }
-    
-    private List<GridNode> GetNeighborsToCheck(GridNode node)
-    {
-        var neighbors = new List<GridNode>();
-        Vector2Int[] offsets;
-
-        if (node.GridPosition.y % 2 == 0)
+        foreach (var node in grid.Values)
         {
-            offsets = new Vector2Int[] { new Vector2Int(1, 0), new Vector2Int(0, 1), new Vector2Int(-1, 1) };
-        }
-        else
-        {
-            offsets = new Vector2Int[] { new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, 1) };
-        }
-
-        foreach (var offset in offsets)
-        {
-            if (gridManager.GetGrid().TryGetValue(node.GridPosition + offset, out var neighbor))
+            if (node.IsOccupied && !visitedNodes.Contains(node))
             {
-                neighbors.Add(neighbor);
+                Stack<GridNode> stack = new Stack<GridNode>();
+                stack.Push(node);
+                visitedNodes.Add(node);
+
+                while (stack.Count > 0)
+                {
+                    var currentNode = stack.Pop();
+                    foreach (var neighbor in gridManager.GetNeighbors(currentNode))
+                    {
+                        if (neighbor.IsOccupied && 
+                            !visitedNodes.Contains(neighbor) && 
+                            neighbor.PlacedMarble.MarbleColor == currentNode.PlacedMarble.MarbleColor)
+                        {
+                            visitedNodes.Add(neighbor);
+                            stack.Push(neighbor);
+                            requiredKeys.Add(GetConnectionKey(currentNode, neighbor));
+                        }
+                    }
+                }
             }
         }
-        return neighbors;
+        return requiredKeys;
+    }
+
+    // İki node arasına boru çizen ve sözlüğe ekleyen metot
+    private void AnimatePipeConnection(GridNode from, GridNode to, string key)
+    {
+        PipeConnector pipe = Instantiate(pipePrefab, _connectionsParent);
+        pipe.gameObject.name = $"PipeConn_{key}";
+        pipe.AnimateConnection(from.transform.position, to.transform.position, from.PlacedMarble.MarbleColor);
+        _activePipes.Add(key, pipe);
+    }
+    
+    // İki node'dan her zaman aynı sırada (küçükten büyüğe) bir anahtar üretir
+    // Bu, A-B ve B-A bağlantılarının aynı kabul edilmesini sağlar
+    private string GetConnectionKey(GridNode nodeA, GridNode nodeB)
+    {
+        if (nodeA.GetInstanceID() < nodeB.GetInstanceID())
+            return $"{nodeA.GridPosition.x},{nodeA.GridPosition.y}_{nodeB.GridPosition.x},{nodeB.GridPosition.y}";
+        else
+            return $"{nodeB.GridPosition.x},{nodeB.GridPosition.y}_{nodeA.GridPosition.x},{nodeA.GridPosition.y}";
+    }
+    private Vector2Int StringToVector2Int(string s)
+    {
+        var parts = s.Split(',');
+        return new Vector2Int(int.Parse(parts[0]), int.Parse(parts[1]));
     }
 }
