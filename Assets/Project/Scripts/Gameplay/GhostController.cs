@@ -3,9 +3,6 @@ using UnityEngine;
 
 public class GhostController : MonoBehaviour
 {
-    [SerializeField] private Material validPlacementMaterial;
-    [SerializeField] private Material invalidPlacementMaterial;
-
     private List<GameObject> _ghostParts = new List<GameObject>();
 
     public void Initialize(Shape shapeToCopy)
@@ -16,33 +13,48 @@ public class GhostController : MonoBehaviour
         foreach (var originalMarble in shapeToCopy.GetMarbles())
         {
             GameObject ghostPart = Instantiate(originalMarble.gameObject, transform);
-            ghostPart.transform.localScale = originalMarble.transform.localScale;
             ghostPart.GetComponent<Collider>().enabled = false;
+            
+            MeshRenderer renderer = ghostPart.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                Material materialInstance = new Material(renderer.material);
+                
+                materialInstance.SetFloat("_Surface", 1.0f); // Yüzey Tipi -> Transparent
+                materialInstance.SetFloat("_Blend", 0.0f);   // Karıştırma Modu -> Alpha
+                materialInstance.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                materialInstance.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                materialInstance.SetInt("_ZWrite", 0);
+                materialInstance.DisableKeyword("_ALPHATEST_ON");
+                materialInstance.EnableKeyword("_ALPHABLEND_ON");
+                materialInstance.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                materialInstance.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                
+                Color originalColor = originalMarble.MarbleColor;
+                float desiredAlpha = 120f / 255f;
+                materialInstance.color = new Color(originalColor.r, originalColor.g, originalColor.b, desiredAlpha); 
+                renderer.material = materialInstance;
+            }
             _ghostParts.Add(ghostPart);
         }
     }
-
-    public void UpdateGhostPositions(Dictionary<Marble, GridNode> targetPlacement)
+    
+    public void UpdatePositions(Dictionary<Marble, GridNode> targetPlacement)
     {
-        foreach (var part in _ghostParts) part.SetActive(false);
+        foreach (var part in _ghostParts)
+        {
+            part.SetActive(false);
+        }
+
         int i = 0;
         foreach (var pair in targetPlacement)
         {
             if (i < _ghostParts.Count)
             {
                 _ghostParts[i].SetActive(true);
-                _ghostParts[i].transform.position = pair.Value.transform.position; 
+                _ghostParts[i].transform.position = pair.Value.transform.position;
             }
             i++;
-        }
-    }
-
-    public void SetState(bool isValid)
-    {
-        Material materialToApply = isValid ? validPlacementMaterial : invalidPlacementMaterial;
-        foreach (var part in _ghostParts)
-        {
-            part.GetComponent<MeshRenderer>().material = materialToApply;
         }
     }
 }
