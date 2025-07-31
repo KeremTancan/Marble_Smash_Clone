@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Shape : MonoBehaviour
 {
+    #region Variables
     [Header("Görsel Efektler")]
     [SerializeField] private float pickupScale = 1.2f;
     [SerializeField] private float scaleDuration = 0.1f;
@@ -23,13 +24,12 @@ public class Shape : MonoBehaviour
     private Dictionary<Marble, GridNode> _lastValidPlacement;
     
     private List<GridNode> _lastMarkedNodes = new List<GridNode>();
-
+    #endregion
     private void Awake()
     {
         _originalScale = transform.localScale;
         _gridManager = FindObjectOfType<GridManager>();
     }
-
     public void OnSelected()
     {
         _originalPosition = transform.position;
@@ -45,7 +45,6 @@ public class Shape : MonoBehaviour
 
         RunCoroutine(PickupRoutine());
     }
-
     public void OnDrag(Vector3 newPosition)
     {
         transform.position = newPosition + pickupOffset;
@@ -76,15 +75,9 @@ public class Shape : MonoBehaviour
             _lastValidPlacement = null;
         }
     }
-
     public void OnDropped()
     {
         ResetMarkedNodes();
-
-        if (_ghostInstance != null)
-        {
-            _ghostInstance.gameObject.SetActive(false);
-        }
 
         if (_lastValidPlacement != null)
         {
@@ -98,7 +91,6 @@ public class Shape : MonoBehaviour
             RunCoroutine(ReturnRoutine());
         }
     }
-    
     private void MarkNodes(IEnumerable<GridNode> nodes, Color color)
     {
         foreach (var node in nodes)
@@ -107,7 +99,6 @@ public class Shape : MonoBehaviour
             _lastMarkedNodes.Add(node);
         }
     }
-
     private void ResetMarkedNodes()
     {
         foreach (var node in _lastMarkedNodes)
@@ -116,8 +107,6 @@ public class Shape : MonoBehaviour
         }
         _lastMarkedNodes.Clear();
     }
-    
-    #region Unchanged Code
     public List<Marble> GetMarbles() => _marbles;
     public void Initialize(ShapeData_SO shapeData, ColorPalette_SO palette, GameObject marblePrefab, float hSpacing, float vSpacing){
         this.ShapeData = shapeData;
@@ -179,5 +168,4 @@ public class Shape : MonoBehaviour
         transform.localScale = _originalScale;
         transform.SetParent(OriginalParent);
     }
-    #endregion
 }
