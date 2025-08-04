@@ -4,7 +4,6 @@ public class ScoreManager : MonoBehaviour
 {
     private int _currentScore = 0;
     private int _scoreGoal = 0;
-
     public void PrepareLevel(int goal)
     {
         _currentScore = 0;

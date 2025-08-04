@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4608192a44793934e9aea303e88b0c9c, type: 3}
   m_Name: Level_00 1
   m_EditorClassIdentifier: 
-  LevelID: 0
+  LevelID: 1
   GridDimensions: {x: 8, y: 10}
   DisabledNodes: []
-  ExplosionGoal: 20
-  AvailableColors: {fileID: 0}
+  ExplosionGoal: 25
+  AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 50
