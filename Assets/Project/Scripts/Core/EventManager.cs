@@ -1,8 +1,7 @@
 using System;
-using UnityEngine;
 
 public static class EventManager
-{ 
+{
     public static event Action OnShapePlaced;
     
     public static event Action<int> OnMarblesExploded; 

@@ -79,7 +79,7 @@ public class GridManager : MonoBehaviour
                     node.SetVacant();
                 }
             }
-            
+        
             Debug.Log(allNodesToExplode.Count + " adet top patlatıldı!");
             connectionManager.UpdateAllConnections();
         }
