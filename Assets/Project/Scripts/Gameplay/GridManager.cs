@@ -22,7 +22,43 @@ public class GridManager : MonoBehaviour
     private Transform _connectionsParent;
 
     public Dictionary<Vector2Int, GridNode> GetGrid() => _grid;
-    
+
+    public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
+    {
+        var shapeOffsets = shapeData.MarblePositions;
+        if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
+
+        foreach (GridNode potentialStartNode in _grid.Values)
+        {
+            if (potentialStartNode.IsOccupied)
+            {
+                continue;
+            }
+
+            bool isPlacementPossibleHere = true;
+            // Bu başlangıç noktasına göre şeklin diğer parçaları geçerli noktalara mı denk geliyor?
+            foreach (Vector2Int offset in shapeOffsets)
+            {
+                Vector2Int targetGridPos = potentialStartNode.GridPosition + offset;
+
+                // Eğer hedeflenen noktalardan BİRİ BİLE;
+                // 1. Izgarada mevcut değilse VEYA 2. Doluysa...
+                if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || targetNode.IsOccupied)
+                {
+                    // ...bu yerleşim mümkün değildir.
+                    isPlacementPossibleHere = false;
+                    break;
+                }
+            }
+
+            if (isPlacementPossibleHere)
+            {
+                return true; // Evet yerleştirilebilir 
+            }
+        }
+        return false;
+    }
+    #region Mevcut, Değişmeyen Kodlar
     public void PlaceShape(Shape shape, Dictionary<Marble, GridNode> placement)
     {
         List<GridNode> placedNodes = new List<GridNode>();
@@ -40,7 +76,6 @@ public class GridManager : MonoBehaviour
         
         connectionManager.UpdateAllConnections();
         StartCoroutine(ProcessMatchesAfterPlacement(placedNodes));
-        EventManager.RaiseOnShapePlaced();
     }
     
     private IEnumerator ProcessMatchesAfterPlacement(List<GridNode> placedNodes, float delay = 0.25f)
@@ -79,10 +114,12 @@ public class GridManager : MonoBehaviour
                     node.SetVacant();
                 }
             }
-        
+            
             Debug.Log(allNodesToExplode.Count + " adet top patlatıldı!");
             connectionManager.UpdateAllConnections();
         }
+        
+        EventManager.RaiseOnTurnCompleted();
     }
     
     private List<GridNode> FindConnectedGroup(GridNode startNode)
@@ -166,8 +203,7 @@ public class GridManager : MonoBehaviour
             ConnectToNeighbors(node);
         }
     }
-
-    #region Grid Generation, Placement, and Utility (Değişiklik Yok)
+    
     public GridNode GetClosestNode(Vector3 worldPosition)
     {
         if (_grid.Count == 0) return null;
@@ -225,7 +261,7 @@ public class GridManager : MonoBehaviour
             return false;
         }
         foreach (var node in targetNodes) {
-            if (node.IsOccupied) return false;
+            if (node == null || node.IsOccupied) return false;
         }
         return true;
     }
