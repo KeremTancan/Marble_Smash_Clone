@@ -6,6 +6,7 @@ public class UIManager : MonoBehaviour
 {
     [Header("Yöneticiler")]
     [SerializeField] private GameManager gameManager;
+    [SerializeField] private ShapeManager shapeManager; 
 
     [Header("Oyun İçi UI Elemanları")]
     [SerializeField] private TextMeshProUGUI scoreText;
@@ -18,7 +19,7 @@ public class UIManager : MonoBehaviour
     [Header("Butonlar")]
     [SerializeField] private Button nextLevelButton;
     [SerializeField] private Button restartButton;
-
+    [SerializeField] private Button refreshShapesButton;
 
     private void OnEnable()
     {
@@ -38,10 +39,32 @@ public class UIManager : MonoBehaviour
     {
         if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
         if (levelFailedPanel != null) levelFailedPanel.SetActive(false);
-        
 
         if (nextLevelButton != null) nextLevelButton.onClick.AddListener(OnNextLevelClicked);
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
+        if (refreshShapesButton != null) refreshShapesButton.onClick.AddListener(OnRefreshShapesClicked);
+    }
+
+    private void OnNextLevelClicked() { gameManager.LoadNextLevel(); }
+    private void OnRestartClicked() { gameManager.RestartLevel(); }
+    
+    private void OnRefreshShapesClicked()
+    {
+        if (shapeManager != null)
+        {
+            shapeManager.RefreshShapeQueue();
+        }
+    }
+
+    private void UpdateScoreUI(int currentScore, int goal)
+    {
+        int displayScore = Mathf.Min(currentScore, goal);
+        if (scoreText != null) scoreText.text = $"{displayScore} / {goal}";
+        if (scoreSlider != null)
+        {
+            scoreSlider.maxValue = goal;
+            scoreSlider.value = displayScore;
+        }
     }
 
     private void ShowLevelCompletePanel()
@@ -59,17 +82,6 @@ public class UIManager : MonoBehaviour
         {
             levelFailedPanel.SetActive(true);
             Canvas.ForceUpdateCanvases();
-        }
-    }
-    
-    private void OnNextLevelClicked() { gameManager.LoadNextLevel(); }
-    private void OnRestartClicked() { gameManager.RestartLevel(); }
-    private void UpdateScoreUI(int currentScore, int goal) {
-        int displayScore = Mathf.Min(currentScore, goal);
-        if (scoreText != null) scoreText.text = $"{displayScore} / {goal}";
-        if (scoreSlider != null) {
-            scoreSlider.maxValue = goal;
-            scoreSlider.value = displayScore;
         }
     }
 }

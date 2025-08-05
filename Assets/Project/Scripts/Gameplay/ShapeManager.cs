@@ -34,6 +34,20 @@ public class ShapeManager : MonoBehaviour
     {
         EventManager.OnTurnCompleted -= HandleTurnCompleted;
     }
+    public void RefreshShapeQueue()
+    {
+        if (!gameObject.activeInHierarchy) return; // Oyun bittiyse bir şey yapma
+
+        foreach (var slot in queueSlots)
+        {
+            foreach (Transform child in slot)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+        
+        StartCoroutine(SpawnBatchWithDelay(0f)); 
+    }
 
     public void PrepareInitialShapes(LevelData_SO levelData)
     {
@@ -41,7 +55,6 @@ public class ShapeManager : MonoBehaviour
         _currentPalette = levelData.AvailableColors;
         foreach (var slot in queueSlots) { foreach (Transform child in slot) Destroy(child.gameObject); }
         
-        // Başlangıçta yeni şekilleri oluştur ve HEMEN KONTROL ET
         SpawnNewShapeBatch();
         CheckForLoseCondition();
     }
@@ -52,13 +65,11 @@ public class ShapeManager : MonoBehaviour
 
         if (_shapesLeftInQueue > 0)
         {
-            // Eğer slotlarda hala şekil varsa, durumu kontrol et
             CheckForLoseCondition();
         }
         else
         {
-            // Eğer slotlar boşaldıysa, yenilerini getirmesi için Coroutine'i başlat
-            StartCoroutine(SpawnBatchWithDelay(0.5f));
+            StartCoroutine(SpawnBatchWithDelay(0.1f));
         }
     }
     
@@ -111,9 +122,7 @@ public class ShapeManager : MonoBehaviour
     private IEnumerator SpawnBatchWithDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
-        // Yeni şekilleri oluştur
         SpawnNewShapeBatch();
-        // VE YENİ ŞEKİLLER GELDİKTEN SONRA TEKRAR KONTROL ET
         CheckForLoseCondition();
     }
 
