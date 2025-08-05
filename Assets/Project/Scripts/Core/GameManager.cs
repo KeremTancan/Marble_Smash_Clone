@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UIManager uiManager;
     [SerializeField] private InputManager inputManager;
     [SerializeField] private LevelManager levelManager;
+    [SerializeField] private PowerUpManager powerUpManager;
     private GameState _currentState;
 
     private void OnEnable()

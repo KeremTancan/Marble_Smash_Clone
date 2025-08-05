@@ -39,6 +39,11 @@ public class GridNode : MonoBehaviour
     {
         IsOccupied = true;
         PlacedMarble = marble;
+        
+        if (marble != null)
+        {
+            marble.ParentNode = this;
+        }
     }
 
     public void SetVacant()

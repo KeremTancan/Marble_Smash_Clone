@@ -17,6 +17,8 @@ public class GridManager : MonoBehaviour
     [Header("Izgara Ayarları")]
     [SerializeField] private float horizontalSpacing = 1.0f;
     [SerializeField] private float verticalSpacing = 0.866f;
+    [Header("Roket Ayarları")]
+    [SerializeField] private Rocket rocketPrefab;
     
     private readonly Dictionary<Vector2Int, GridNode> _grid = new Dictionary<Vector2Int, GridNode>();
     private Transform _connectionsParent;
@@ -41,11 +43,10 @@ public class GridManager : MonoBehaviour
             {
                 Vector2Int targetGridPos = potentialStartNode.GridPosition + offset;
 
-                // Eğer hedeflenen noktalardan BİRİ BİLE;
                 // 1. Izgarada mevcut değilse VEYA 2. Doluysa...
                 if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || targetNode.IsOccupied)
                 {
-                    // ...bu yerleşim mümkün değildir.
+                    // ...bu yerleşim mümkün değil
                     isPlacementPossibleHere = false;
                     break;
                 }
@@ -58,6 +59,63 @@ public class GridManager : MonoBehaviour
         }
         return false;
     }
+    
+    public void LaunchFireworksFromNode(GridNode startNode)
+    {
+        if (rocketPrefab == null)
+        {
+            Debug.LogError("GridManager'a Roket Prefab'ı atanmamış!");
+            return;
+        }
+
+        Debug.Log($"{startNode.GridPosition} noktasından roketler fırlatılıyor!");
+
+        Vector2Int[] diagonalOffsets;
+        if (startNode.GridPosition.y % 2 == 0) // Çift satırlar için çapraz yönler
+        {
+            diagonalOffsets = new Vector2Int[]
+            {
+                new Vector2Int(-1, 1), // Sol-üst
+                new Vector2Int(0, 1),  // Sağ-üst
+                new Vector2Int(-1, -1),// Sol-alt
+                new Vector2Int(0, -1)  // Sağ-alt
+            };
+        }
+        else 
+        {
+            diagonalOffsets = new Vector2Int[]
+            {
+                new Vector2Int(0, 1),   // Sol-üst
+                new Vector2Int(1, 1),  // Sağ-üst
+                new Vector2Int(0, -1),  // Sol-alt
+                new Vector2Int(1, -1)  // Sağ-alt
+            };
+        }
+
+        // Her bir çapraz yöne bir roket fırlat
+        foreach (var offset in diagonalOffsets)
+        {
+            if (_grid.TryGetValue(startNode.GridPosition + offset, out GridNode neighborNode))
+            {
+                Vector3 direction = (neighborNode.transform.position - startNode.transform.position).normalized;
+                Rocket newRocket = Instantiate(rocketPrefab, startNode.transform.position, Quaternion.identity);
+                newRocket.Launch(direction, this);
+            }
+        }
+
+        ExplodeMarble(startNode.PlacedMarble);
+    }
+    public void ExplodeMarble(Marble marble)
+    {
+        if (marble == null || marble.ParentNode == null || !marble.ParentNode.IsOccupied) return;
+        
+        EventManager.RaiseOnMarblesExploded(1);
+        GridNode node = marble.ParentNode;
+        Destroy(marble.gameObject);
+        node.SetVacant();
+        connectionManager.UpdateAllConnections();
+    }
+    
     #region Mevcut, Değişmeyen Kodlar
     public void PlaceShape(Shape shape, Dictionary<Marble, GridNode> placement)
     {

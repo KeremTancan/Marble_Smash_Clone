@@ -4,6 +4,7 @@ using UnityEngine;
 public class Marble : MonoBehaviour
 {
     public Color MarbleColor { get; private set; }
+    public GridNode ParentNode { get; set; }
     private MeshRenderer _meshRenderer;
 
     private void Awake()
