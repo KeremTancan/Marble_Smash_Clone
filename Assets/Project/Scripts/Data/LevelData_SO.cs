@@ -3,6 +3,12 @@ using System.Collections.Generic;
 
 /// Tek bir seviyenin tüm yapılandırma verilerini içerir.
 
+[System.Serializable] public struct LockedNodeData
+{
+    public Vector2Int Position;
+    public int MarblesToUnlock;
+}
+
 [CreateAssetMenu(fileName = "Level_00", menuName = "Marble Smash/Level Data")]
 public class LevelData_SO : ScriptableObject
 {
@@ -14,6 +20,9 @@ public class LevelData_SO : ScriptableObject
     
     [Tooltip("Bu koordinatlardaki noktalar ızgarada oluşturulmayacak.")]
     public List<Vector2Int> DisabledNodes;
+    
+    [Header("Kilitli Nokta Ayarları")]
+    public List<LockedNodeData> LockedNodes;
 
     [Header("Oyun Kuralları")]
     public int ExplosionGoal = 20;

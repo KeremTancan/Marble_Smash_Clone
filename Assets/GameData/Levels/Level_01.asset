@@ -14,7 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LevelID: 1
   GridDimensions: {x: 6, y: 7}
-  DisabledNodes: []
+  DisabledNodes:
+  - {x: 4, y: 5}
+  LockedNodes:
+  - Position: {x: 1, y: 1}
+    MarblesToUnlock: 8
+  - Position: {x: 3, y: 4}
+    MarblesToUnlock: 20
   ExplosionGoal: 25
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 50

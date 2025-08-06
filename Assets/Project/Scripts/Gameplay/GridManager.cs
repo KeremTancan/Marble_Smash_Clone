@@ -29,34 +29,32 @@ public class GridManager : MonoBehaviour
     {
         var shapeOffsets = shapeData.MarblePositions;
         if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
-
+    
         foreach (GridNode potentialStartNode in _grid.Values)
         {
-            if (potentialStartNode.IsOccupied)
+            if (!potentialStartNode.IsAvailable)
             {
                 continue;
             }
 
             bool isPlacementPossibleHere = true;
-            // Bu başlangıç noktasına göre şeklin diğer parçaları geçerli noktalara mı denk geliyor?
             foreach (Vector2Int offset in shapeOffsets)
             {
                 Vector2Int targetGridPos = potentialStartNode.GridPosition + offset;
 
-                // 1. Izgarada mevcut değilse VEYA 2. Doluysa...
-                if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || targetNode.IsOccupied)
+                if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
                 {
-                    // ...bu yerleşim mümkün değil
                     isPlacementPossibleHere = false;
                     break;
                 }
             }
-
+        
             if (isPlacementPossibleHere)
             {
-                return true; // Evet yerleştirilebilir 
+                return true;
             }
         }
+    
         return false;
     }
     
@@ -237,27 +235,46 @@ public class GridManager : MonoBehaviour
     
     public void GenerateGrid(LevelData_SO levelData)
     {
-        if (levelData == null || gridNodePrefab == null || connectionPrefab == null) {
+        if (levelData == null || gridNodePrefab == null || connectionPrefab == null)
+        {
             Debug.LogError("GridManager'da gerekli prefab veya veri dosyaları atanmamış!", this);
             return;
         }
+    
         ClearGrid();
         _connectionsParent = new GameObject("Grid_Connections").transform;
         _connectionsParent.SetParent(this.transform);
-        for (int y = 0; y < levelData.GridDimensions.y; y++) {
-            for (int x = 0; x < levelData.GridDimensions.x; x++) {
+        
+        var lockedNodeDictionary = new Dictionary<Vector2Int, int>();
+        foreach (var lockedNodeData in levelData.LockedNodes)
+        {
+            lockedNodeDictionary[lockedNodeData.Position] = lockedNodeData.MarblesToUnlock;
+        }
+
+        for (int y = 0; y < levelData.GridDimensions.y; y++)
+        {
+            for (int x = 0; x < levelData.GridDimensions.x; x++)
+            {
                 var gridPos = new Vector2Int(x, y);
                 if (levelData.DisabledNodes.Contains(gridPos)) continue;
+
                 float worldX = x * horizontalSpacing + (y % 2 != 0 ? horizontalSpacing / 2f : 0);
                 float worldY = y * verticalSpacing;
                 var worldPosition = new Vector3(worldX, worldY, 0);
                 GridNode newNode = Instantiate(gridNodePrefab, worldPosition, Quaternion.identity, this.transform);
                 newNode.Initialize(gridPos);
                 _grid.Add(gridPos, newNode);
+
+                if (lockedNodeDictionary.TryGetValue(gridPos, out int marblesToUnlock))
+                {
+                    newNode.Lock(marblesToUnlock);
+                }
             }
         }
+    
         FitGridToSafeArea();
-        foreach (GridNode node in _grid.Values) {
+        foreach (GridNode node in _grid.Values)
+        {
             ConnectToNeighbors(node);
         }
     }
@@ -315,11 +332,13 @@ public class GridManager : MonoBehaviour
     public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
     {
         var targetNodes = placement.Values.ToList();
-        if (targetNodes.Count != targetNodes.Distinct().Count()) {
+        if (targetNodes.Count != targetNodes.Distinct().Count())
+        {
             return false;
         }
-        foreach (var node in targetNodes) {
-            if (node == null || node.IsOccupied) return false;
+        foreach (var node in targetNodes)
+        {
+            if (node == null || !node.IsAvailable) return false;
         }
         return true;
     }

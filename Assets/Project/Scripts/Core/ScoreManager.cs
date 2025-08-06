@@ -2,13 +2,13 @@ using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
+    [SerializeField] private GridManager gridManager; 
     private int _currentScore = 0;
     private int _scoreGoal = 0;
     public void PrepareLevel(int goal)
     {
         _currentScore = 0;
         _scoreGoal = goal;
-        
         EventManager.RaiseOnScoreUpdated(_currentScore, _scoreGoal);
     }
 
@@ -21,16 +21,30 @@ public class ScoreManager : MonoBehaviour
     {
         EventManager.OnMarblesExploded -= AddScore;
     }
-
+    
     private void AddScore(int amount)
     {
         _currentScore += amount;
         EventManager.RaiseOnScoreUpdated(_currentScore, _scoreGoal);
+        
+        CheckForUnlocks();
 
         if (_currentScore >= _scoreGoal)
         {
             EventManager.RaiseOnLevelCompleted();
-            Debug.Log("SEVİYE GEÇİLDİ!");
+        }
+    }
+
+    private void CheckForUnlocks()
+    {
+        if (gridManager == null) return;
+
+        foreach (var node in gridManager.GetGrid().Values)
+        {
+            if (node.IsLocked && _currentScore >= node.MarblesToUnlock)
+            {
+                node.Unlock();
+            }
         }
     }
 }
