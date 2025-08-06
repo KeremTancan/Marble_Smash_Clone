@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class Shape : MonoBehaviour
 {
-    #region Variables
     [Header("Görsel Efektler")]
     [SerializeField] private float pickupScale = 1.2f;
     [SerializeField] private float scaleDuration = 0.1f;
@@ -22,38 +21,42 @@ public class Shape : MonoBehaviour
     private GhostController _ghostInstance;
     private Coroutine _activeCoroutine;
     private Dictionary<Marble, GridNode> _lastValidPlacement;
-    
     private List<GridNode> _lastMarkedNodes = new List<GridNode>();
-    #endregion
+
+    // --- OPTİMİZASYON İÇİN YENİ DEĞİŞKEN ---
+    // En son hedeflediğimiz ana ızgara noktasını hafızada tutacağız.
+    private GridNode _lastClosestNode = null;
+    // --- BİTTİ ---
+
     private void Awake()
     {
         _originalScale = transform.localScale;
         _gridManager = FindObjectOfType<GridManager>();
     }
-    public void OnSelected()
-    {
-        _originalPosition = transform.position;
-        OriginalParent = transform.parent;
-        
-        if (_ghostInstance == null)
-        {
-            _ghostInstance = Instantiate(ghostPrefab);
-            _ghostInstance.Initialize(this);
-        }
-        _ghostInstance.gameObject.SetActive(false);
-        ResetMarkedNodes();
-
-        RunCoroutine(PickupRoutine());
-    }
+    
+    // --- OnDrag METODU TAMAMEN YENİLENDİ ---
     public void OnDrag(Vector3 newPosition)
     {
         transform.position = newPosition + pickupOffset;
+
+        // 1. Adım: Şeklin merkezine en yakın ızgara noktasını bul.
+        GridNode currentClosestNode = _gridManager.GetClosestNode(_marbles[0].transform.position);
+
+        // 2. Adım (En Önemli Optimizasyon):
+        // Eğer hedeflediğimiz ızgara noktası bir önceki kare ile aynıysa, HİÇBİR ŞEY YAPMA.
+        // Bu, gereksiz hesaplamaları %99 oranında engeller.
+        if (currentClosestNode == _lastClosestNode)
+        {
+            return;
+        }
+
+        // 3. Adım: Hedef ızgara noktası değiştiyse, hafızayı güncelle ve hesaplamalara başla.
+        _lastClosestNode = currentClosestNode;
         ResetMarkedNodes();
 
-        var targetPlacement = _gridManager.GetTargetPlacement(this);
-        
-        if (targetPlacement.Count > 0)
+        if (currentClosestNode != null)
         {
+            var targetPlacement = _gridManager.GetTargetPlacement(this);
             bool isValid = _gridManager.CheckPlacementValidity(targetPlacement);
             
             if (isValid)
@@ -75,38 +78,67 @@ public class Shape : MonoBehaviour
             _lastValidPlacement = null;
         }
     }
+
+    public void OnSelected()
+    {
+        _originalPosition = transform.position;
+        OriginalParent = transform.parent;
+        
+        if (_ghostInstance == null)
+        {
+            _ghostInstance = Instantiate(ghostPrefab);
+            _ghostInstance.Initialize(this);
+        }
+        _ghostInstance.gameObject.SetActive(false);
+        ResetMarkedNodes();
+        _lastClosestNode = null; // Seçimi sıfırla
+
+        RunCoroutine(PickupRoutine());
+    }
+
     public void OnDropped()
     {
         ResetMarkedNodes();
+        if (_ghostInstance != null)
+        {
+            _ghostInstance.gameObject.SetActive(false);
+        }
 
         if (_lastValidPlacement != null)
         {
             _gridManager.PlaceShape(this, _lastValidPlacement);
             IsPlaced = true;
             this.enabled = false;
-            Destroy(_ghostInstance.gameObject);
         }
         else
         {
             RunCoroutine(ReturnRoutine());
         }
+        _lastClosestNode = null; // Bırakmayı sıfırla
     }
+    
     private void MarkNodes(IEnumerable<GridNode> nodes, Color color)
     {
         foreach (var node in nodes)
         {
-            node.SetHighlightColor(color);
-            _lastMarkedNodes.Add(node);
+            if(node != null) // Güvenlik kontrolü
+            {
+                node.SetHighlightColor(color);
+                _lastMarkedNodes.Add(node);
+            }
         }
     }
+
     private void ResetMarkedNodes()
     {
         foreach (var node in _lastMarkedNodes)
         {
-            node.ResetColor();
+            if(node != null) node.ResetColor();
         }
         _lastMarkedNodes.Clear();
     }
+    
+    #region Değişmeyen Kodlar
     public List<Marble> GetMarbles() => _marbles;
     public void Initialize(ShapeData_SO shapeData, ColorPalette_SO palette, GameObject marblePrefab, float hSpacing, float vSpacing){
         this.ShapeData = shapeData;
@@ -168,4 +200,5 @@ public class Shape : MonoBehaviour
         transform.localScale = _originalScale;
         transform.SetParent(OriginalParent);
     }
+    #endregion
 }

@@ -15,7 +15,7 @@ MonoBehaviour:
   LevelID: 1
   GridDimensions: {x: 6, y: 7}
   DisabledNodes:
-  - {x: 4, y: 5}
+  - {x: 4, y: 4}
   LockedNodes:
   - Position: {x: 1, y: 1}
     MarblesToUnlock: 8

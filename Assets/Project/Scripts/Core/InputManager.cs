@@ -3,7 +3,7 @@ using UnityEngine;
 public class InputManager : MonoBehaviour
 {
     [SerializeField] private Camera mainCamera;
-    [SerializeField] private float dragPlaneZ = -1f;
+    [SerializeField] private float dragPlaneZ = -2f;
     [SerializeField] private PowerUpManager powerUpManager;
     [SerializeField] private GridManager gridManager; 
 
