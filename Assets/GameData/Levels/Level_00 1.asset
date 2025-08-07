@@ -10,17 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4608192a44793934e9aea303e88b0c9c, type: 3}
-  m_Name: Level_01
+  m_Name: Level_02
   m_EditorClassIdentifier: 
-  LevelID: 1
-  GridDimensions: {x: 6, y: 7}
+  LevelID: 2
+  GridDimensions: {x: 6, y: 8}
   DisabledNodes:
-  - {x: 4, y: 4}
-  LockedNodes:
-  - Position: {x: 1, y: 1}
-    MarblesToUnlock: 8
-  - Position: {x: 3, y: 4}
-    MarblesToUnlock: 20
-  ExplosionGoal: 25
+  - {x: 3, y: 7}
+  LockedNodes: []
+  ExplosionGoal: 20
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
-  Reward: 1000
+  Reward: 55

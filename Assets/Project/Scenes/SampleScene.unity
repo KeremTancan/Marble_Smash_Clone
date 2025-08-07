@@ -1035,7 +1035,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levels:
   - {fileID: 11400000, guid: 17ff92f2a7d5d5f4a8514b9af941d0d2, type: 2}
-  - {fileID: 11400000, guid: be62f3797fab4274bbccb9910908147f, type: 2}
+  - {fileID: 11400000, guid: a0c59afb277f3e14f82e24433477fc7c, type: 2}
 --- !u!4 &321108578
 Transform:
   m_ObjectHideFlags: 0
@@ -1167,7 +1167,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 1
+  m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
