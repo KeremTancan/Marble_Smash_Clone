@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PowerUpID: Firework
   Cost: 400
-  UnlockLevel: 0
+  UnlockLevel: 1
   InitialFreeUses: 3
