@@ -7,12 +7,12 @@ public class UIManager : MonoBehaviour
     [Header("Yöneticiler")]
     [SerializeField] private GameManager gameManager;
     [SerializeField] private ShapeManager shapeManager;
-    [SerializeField] private PowerUpManager powerUpManager; 
+    [SerializeField] private PowerUpManager powerUpManager;
 
     [Header("Oyun İçi UI Elemanları")]
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private Slider scoreSlider;
-    [SerializeField] private TextMeshProUGUI currencyText;
+    [SerializeField] private TextMeshProUGUI currencyText; // YENİ EKLENDİ
     
     [Header("Oyun Sonu Panelleri")]
     [SerializeField] private GameObject levelCompletePanel;
@@ -22,7 +22,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button nextLevelButton;
     [SerializeField] private Button restartButton;
     [SerializeField] private Button refreshShapesButton;
-    [SerializeField] private Button fireworkButton; 
+    [SerializeField] private Button fireworkButton;
     [SerializeField] private Button cancelFireworkButton;
 
     [Header("Power-Up Paneli")]
@@ -50,7 +50,7 @@ public class UIManager : MonoBehaviour
     {
         if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
         if (levelFailedPanel != null) levelFailedPanel.SetActive(false);
-        if (fireworkModePanel != null) fireworkModePanel.SetActive(false);
+        
         if (nextLevelButton != null) nextLevelButton.onClick.AddListener(OnNextLevelClicked);
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
         if (refreshShapesButton != null) refreshShapesButton.onClick.AddListener(OnRefreshShapesClicked);
@@ -60,10 +60,7 @@ public class UIManager : MonoBehaviour
 
     private void OnFireworkButtonClicked() => powerUpManager.ActivateFireworkMode();
     private void OnCancelFireworkClicked() => powerUpManager.DeactivateFireworkMode();
-    private void ToggleFireworkPanel(bool isActive)
-    {
-        if (fireworkModePanel != null) fireworkModePanel.SetActive(isActive);
-    }
+    
 
     private void OnNextLevelClicked() { gameManager.LoadNextLevel(); }
     private void OnRestartClicked() { gameManager.RestartLevel(); }
@@ -111,5 +108,10 @@ public class UIManager : MonoBehaviour
         {
             currencyText.text = newAmount.ToString();
         }
+    }
+    
+    private void ToggleFireworkPanel(bool isActive)
+    {
+        if (fireworkModePanel != null) fireworkModePanel.SetActive(isActive);
     }
 }
