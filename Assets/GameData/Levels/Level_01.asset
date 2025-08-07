@@ -23,4 +23,4 @@ MonoBehaviour:
     MarblesToUnlock: 20
   ExplosionGoal: 25
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
-  Reward: 50
+  Reward: 1000

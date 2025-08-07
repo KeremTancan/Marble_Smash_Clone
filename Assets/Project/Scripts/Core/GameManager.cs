@@ -48,8 +48,8 @@ public class GameManager : MonoBehaviour
         scoreManager.PrepareLevel(currentLevelData.ExplosionGoal);
         gridManager.GenerateGrid(currentLevelData);
         shapeManager.PrepareInitialShapes(currentLevelData);
+        EventManager.RaiseOnLevelStarted(currentLevelData.LevelID);
     }
-
     private void HandleLevelComplete()
     {
         if (_currentState != GameState.Playing) return; 

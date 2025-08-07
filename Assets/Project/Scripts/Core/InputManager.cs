@@ -3,9 +3,10 @@ using UnityEngine;
 public class InputManager : MonoBehaviour
 {
     [SerializeField] private Camera mainCamera;
-    [SerializeField] private float dragPlaneZ = -2f;
+    [SerializeField] private float dragPlaneZ = -1f;
     [SerializeField] private PowerUpManager powerUpManager;
-    [SerializeField] private GridManager gridManager; 
+    [SerializeField] private GridManager gridManager;
+    [SerializeField] private PowerUpData_SO fireworkPowerUpData;
 
     private Shape _draggedShape;
     private Vector3 _offset; 
@@ -17,8 +18,7 @@ public class InputManager : MonoBehaviour
 
     private void Update()
     {
-        // Eğer havai fişek modu aktifse, sadece o moda özel tıklamaları dinle
-        if (powerUpManager.IsFireworkModeActive)
+        if (powerUpManager != null && powerUpManager.IsFireworkModeActive)
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -42,8 +42,15 @@ public class InputManager : MonoBehaviour
             Marble marble = hit.collider.GetComponent<Marble>();
             if (marble != null && marble.ParentNode != null && marble.ParentNode.IsOccupied)
             {
-                gridManager.LaunchFireworksFromNode(marble.ParentNode);
-                powerUpManager.ConsumeFirework();
+                if (powerUpManager.TryUsePowerUp(fireworkPowerUpData))
+                {
+                    gridManager.LaunchFireworksFromNode(marble.ParentNode);
+                    powerUpManager.DeactivateFireworkMode();
+                }
+                else
+                {
+                    Debug.Log("Roket kullanılamadı (Yetersiz Bakiye/Hak)");
+                }
             }
         }
     }

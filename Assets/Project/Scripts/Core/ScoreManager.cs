@@ -3,7 +3,7 @@ using UnityEngine;
 public class ScoreManager : MonoBehaviour
 {
     [SerializeField] private GridManager gridManager; 
-    private int _currentScore = 0;
+    public int _currentScore = 0;
     private int _scoreGoal = 0;
     public void PrepareLevel(int goal)
     {
