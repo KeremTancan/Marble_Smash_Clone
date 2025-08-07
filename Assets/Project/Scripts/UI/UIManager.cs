@@ -12,6 +12,7 @@ public class UIManager : MonoBehaviour
     [Header("Oyun İçi UI Elemanları")]
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private Slider scoreSlider;
+    [SerializeField] private TextMeshProUGUI currencyText;
     
     [Header("Oyun Sonu Panelleri")]
     [SerializeField] private GameObject levelCompletePanel;
@@ -33,6 +34,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnLevelCompleted += ShowLevelCompletePanel;
         EventManager.OnLevelFailed += ShowLevelFailedPanel;
         EventManager.OnFireworkModeChanged += ToggleFireworkPanel; 
+        EventManager.OnCurrencyUpdated += UpdateCurrencyText;
     }
 
     private void OnDisable()
@@ -41,6 +43,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnLevelCompleted -= ShowLevelCompletePanel;
         EventManager.OnLevelFailed -= ShowLevelFailedPanel;
         EventManager.OnFireworkModeChanged -= ToggleFireworkPanel;
+        EventManager.OnCurrencyUpdated -= UpdateCurrencyText;
     }
 
     void Start()
@@ -48,7 +51,6 @@ public class UIManager : MonoBehaviour
         if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
         if (levelFailedPanel != null) levelFailedPanel.SetActive(false);
         if (fireworkModePanel != null) fireworkModePanel.SetActive(false);
-
         if (nextLevelButton != null) nextLevelButton.onClick.AddListener(OnNextLevelClicked);
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
         if (refreshShapesButton != null) refreshShapesButton.onClick.AddListener(OnRefreshShapesClicked);
@@ -100,6 +102,14 @@ public class UIManager : MonoBehaviour
         {
             levelFailedPanel.SetActive(true);
             Canvas.ForceUpdateCanvases();
+        }
+    }
+    
+    private void UpdateCurrencyText(int newAmount)
+    {
+        if(currencyText != null)
+        {
+            currencyText.text = newAmount.ToString();
         }
     }
 }

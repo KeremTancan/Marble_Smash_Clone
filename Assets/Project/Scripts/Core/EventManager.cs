@@ -8,6 +8,8 @@ public static class EventManager
     public static event Action OnLevelCompleted;
     public static event Action OnLevelFailed;
     public static event Action<bool> OnFireworkModeChanged;
+    public static event Action<int> OnCurrencyUpdated; 
+    public static void RaiseOnCurrencyUpdated(int newAmount) { OnCurrencyUpdated?.Invoke(newAmount); }
     public static void RaiseOnTurnCompleted() { OnTurnCompleted?.Invoke(); }
     public static void RaiseOnMarblesExploded(int amount) { OnMarblesExploded?.Invoke(amount); }
     public static void RaiseOnScoreUpdated(int score, int goal) { OnScoreUpdated?.Invoke(score, goal); }

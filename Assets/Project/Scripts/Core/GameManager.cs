@@ -52,10 +52,17 @@ public class GameManager : MonoBehaviour
 
     private void HandleLevelComplete()
     {
-        if (_currentState != GameState.Playing) return;
+        if (_currentState != GameState.Playing) return; 
+
         _currentState = GameState.LevelComplete;
         inputManager.enabled = false;
         Debug.Log("Oyun Durumu: KAZANILDI - Input Kapatıldı.");
+
+        LevelData_SO currentLevelData = levelManager.GetCurrentLevelData();
+        if (currentLevelData != null)
+        {
+            CurrencyManager.Instance.AddCoins(currentLevelData.Reward);
+        }
     }
 
     private void HandleLevelFailed()
