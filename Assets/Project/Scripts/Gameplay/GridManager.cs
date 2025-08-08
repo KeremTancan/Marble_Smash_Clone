@@ -26,39 +26,37 @@ public class GridManager : MonoBehaviour
 
     public Dictionary<Vector2Int, GridNode> GetGrid() => _grid;
 
-    public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
+public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
+{
+    var shapeOffsets = shapeData.MarblePositions;
+    if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
+    var availableNodes = _grid.Values.Where(node => node.IsAvailable).ToList();
+
+    foreach (GridNode potentialAnchorNode in availableNodes)
     {
-        var shapeOffsets = shapeData.MarblePositions;
-        if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
-
-        foreach (GridNode potentialStartNode in _grid.Values)
+        foreach (Vector2Int shapeAnchorOffset in shapeOffsets)
         {
-            bool isPlacementPossibleHere = true;
-            foreach (Vector2Int offset in shapeOffsets)
+            bool isThisPlacementPossible = true;
+            
+            foreach (Vector2Int marbleOffset in shapeOffsets)
             {
-                Vector2Int targetGridPos = potentialStartNode.GridPosition + offset;
+                Vector2Int targetGridPos = potentialAnchorNode.GridPosition - shapeAnchorOffset + marbleOffset;
 
-                if (_grid.TryGetValue(targetGridPos, out GridNode targetNode))
+                if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
                 {
-                    if (!targetNode.IsAvailable)
-                    {
-                        isPlacementPossibleHere = false;
-                        break;
-                    }
-                }
-                else
-                {
-                    isPlacementPossibleHere = false;
-                    break;
+                    isThisPlacementPossible = false;
+                    break; 
                 }
             }
-            if (isPlacementPossibleHere)
+
+            if (isThisPlacementPossible)
             {
-                return true; 
+                return true;
             }
         }
-        return false;
     }
+    return false;
+}
     
     public void LaunchFireworksFromNode(GridNode startNode)
     {

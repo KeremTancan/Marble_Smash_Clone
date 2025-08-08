@@ -22,6 +22,7 @@ public class UIManager : MonoBehaviour
     [Header("Oyun Sonu Panelleri")]
     [SerializeField] private GameObject levelCompletePanel;
     [SerializeField] private GameObject levelFailedPanel;
+    [SerializeField] private TextMeshProUGUI rewardText; 
 
     [Header("Yenileme Butonu Elemanları")]
     [SerializeField] private Button refreshShapesButton;
@@ -58,6 +59,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnCurrencyUpdated += UpdateCurrencyText;
         EventManager.OnPowerUpCountChanged += OnPowerUpCountChanged;
         EventManager.OnLevelCompleted += ShowLevelCompletePanel;
+        EventManager.OnRewardCollected += UpdateRewardText;
         EventManager.OnLevelFailed += ShowLevelFailedPanel;
         EventManager.OnFireworkModeChanged += ToggleFireworkPanel;
         EventManager.OnScoreUpdated += UpdateScoreUI;
@@ -69,6 +71,7 @@ public class UIManager : MonoBehaviour
         EventManager.OnCurrencyUpdated -= UpdateCurrencyText;
         EventManager.OnPowerUpCountChanged -= OnPowerUpCountChanged;
         EventManager.OnLevelCompleted -= ShowLevelCompletePanel;
+        EventManager.OnRewardCollected -= UpdateRewardText;
         EventManager.OnLevelFailed -= ShowLevelFailedPanel;
         EventManager.OnFireworkModeChanged -= ToggleFireworkPanel;
         EventManager.OnScoreUpdated -= UpdateScoreUI;
@@ -160,6 +163,13 @@ public class UIManager : MonoBehaviour
     private void OnRestartClicked() => gameManager.RestartLevel();
     private void OnCancelFireworkClicked() => powerUpManager.DeactivateFireworkMode();
     private void ToggleFireworkPanel(bool isActive) => fireworkModePanel?.SetActive(isActive);
+    private void UpdateRewardText(int rewardAmount)
+    {
+        if (rewardText != null)
+        {
+            rewardText.text = $"{rewardAmount}";
+        }
+    }
     private void UpdateScoreUI(int currentScore, int goal)
     {
         int displayScore = Mathf.Min(currentScore, goal);

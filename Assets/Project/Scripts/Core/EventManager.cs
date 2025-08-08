@@ -11,7 +11,8 @@ public static class EventManager
     public static event Action<int> OnCurrencyUpdated; 
     public static event Action<int> OnLevelStarted; 
     public static event Action<string, int> OnPowerUpCountChanged;
-
+    public static event Action<int> OnRewardCollected;
+    public static void RaiseOnRewardCollected(int rewardAmount) { OnRewardCollected?.Invoke(rewardAmount); }
     public static void RaiseOnCurrencyUpdated(int newAmount) { OnCurrencyUpdated?.Invoke(newAmount); }
     public static void RaiseOnTurnCompleted() { OnTurnCompleted?.Invoke(); }
     public static void RaiseOnMarblesExploded(int amount) { OnMarblesExploded?.Invoke(amount); }

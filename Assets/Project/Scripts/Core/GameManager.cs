@@ -57,13 +57,15 @@ public class GameManager : MonoBehaviour
     private void HandleLevelComplete()
     {
         if (_currentState != GameState.Playing) return;
+
         _currentState = GameState.LevelComplete;
         inputManager.enabled = false;
-        
+    
         LevelData_SO currentLevelData = levelManager.GetCurrentLevelData();
         if (currentLevelData != null)
         {
             CurrencyManager.Instance.AddCoins(currentLevelData.Reward);
+            EventManager.RaiseOnRewardCollected(currentLevelData.Reward);
         }
     }
 

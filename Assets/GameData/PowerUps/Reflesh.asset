@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PowerUpID: Reflesh
   Cost: 400
-  UnlockLevel: 0
+  UnlockLevel: 5
   InitialFreeUses: 3
