@@ -23,10 +23,7 @@ public class Shape : MonoBehaviour
     private Dictionary<Marble, GridNode> _lastValidPlacement;
     private List<GridNode> _lastMarkedNodes = new List<GridNode>();
 
-    // --- OPTİMİZASYON İÇİN YENİ DEĞİŞKEN ---
-    // En son hedeflediğimiz ana ızgara noktasını hafızada tutacağız.
     private GridNode _lastClosestNode = null;
-    // --- BİTTİ ---
 
     private void Awake()
     {
@@ -34,23 +31,17 @@ public class Shape : MonoBehaviour
         _gridManager = FindObjectOfType<GridManager>();
     }
     
-    // --- OnDrag METODU TAMAMEN YENİLENDİ ---
     public void OnDrag(Vector3 newPosition)
     {
         transform.position = newPosition + pickupOffset;
 
-        // 1. Adım: Şeklin merkezine en yakın ızgara noktasını bul.
         GridNode currentClosestNode = _gridManager.GetClosestNode(_marbles[0].transform.position);
 
-        // 2. Adım (En Önemli Optimizasyon):
-        // Eğer hedeflediğimiz ızgara noktası bir önceki kare ile aynıysa, HİÇBİR ŞEY YAPMA.
-        // Bu, gereksiz hesaplamaları %99 oranında engeller.
         if (currentClosestNode == _lastClosestNode)
         {
             return;
         }
 
-        // 3. Adım: Hedef ızgara noktası değiştiyse, hafızayı güncelle ve hesaplamalara başla.
         _lastClosestNode = currentClosestNode;
         ResetMarkedNodes();
 

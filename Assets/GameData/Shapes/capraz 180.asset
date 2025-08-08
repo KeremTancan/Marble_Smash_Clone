@@ -9,10 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0ca7dce5d815df41a79ec72a5158af6, type: 3}
-  m_Name: Firework
+  m_Script: {fileID: 11500000, guid: dd5982965d3f4f5498ee5b4f23e1fe64, type: 3}
+  m_Name: capraz 180
   m_EditorClassIdentifier: 
-  PowerUpID: Firework
-  Cost: 400
-  UnlockLevel: 2
-  InitialFreeUses: 3
+  MarblePositions:
+  - {x: 0, y: 0}
+  - {x: -1, y: 1}

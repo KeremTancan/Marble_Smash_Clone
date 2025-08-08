@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd5982965d3f4f5498ee5b4f23e1fe64, type: 3}
-  m_Name: deneme
+  m_Name: yatay 2
   m_EditorClassIdentifier: 
   MarblePositions:
   - {x: 0, y: 0}
-  - {x: 0, y: 1}
+  - {x: 1, y: 0}
   - {x: -1, y: 0}
