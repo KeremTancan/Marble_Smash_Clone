@@ -16,6 +16,9 @@ MonoBehaviour:
   GridDimensions: {x: 6, y: 8}
   DisabledNodes: []
   LockedNodes: []
+  PrePlacedShapes:
+  - ShapeData: {fileID: 11400000, guid: ebd989e068af25f4a98a0f1b0a07b81c, type: 2}
+    AnchorPosition: {x: 3, y: 6}
   ExplosionGoal: 15
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 1000

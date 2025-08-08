@@ -12,7 +12,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UIManager uiManager;
     [SerializeField] private InputManager inputManager;
     [SerializeField] private LevelManager levelManager;
-    [SerializeField] private PowerUpManager powerUpManager;
+    [SerializeField] private ConnectionManager connectionManager; 
+
     private GameState _currentState;
 
     private void OnEnable()
@@ -36,7 +37,8 @@ public class GameManager : MonoBehaviour
     {
         LevelData_SO currentLevelData = levelManager.GetCurrentLevelData();
 
-        if (gridManager == null || shapeManager == null || scoreManager == null || inputManager == null || currentLevelData == null)
+        // Kontrol listesine connectionManager'ı da ekledik
+        if (gridManager == null || shapeManager == null || scoreManager == null || inputManager == null || connectionManager == null || currentLevelData == null)
         {
             Debug.LogError("GameManager'a gerekli yönetici veya seviye verisi atanmamış!");
             return;
@@ -47,17 +49,17 @@ public class GameManager : MonoBehaviour
 
         scoreManager.PrepareLevel(currentLevelData.ExplosionGoal);
         gridManager.GenerateGrid(currentLevelData);
+        connectionManager.UpdateAllConnections();
         shapeManager.PrepareInitialShapes(currentLevelData);
         EventManager.RaiseOnLevelStarted(currentLevelData.LevelID);
     }
+
     private void HandleLevelComplete()
     {
-        if (_currentState != GameState.Playing) return; 
-
+        if (_currentState != GameState.Playing) return;
         _currentState = GameState.LevelComplete;
         inputManager.enabled = false;
-        Debug.Log("Oyun Durumu: KAZANILDI - Input Kapatıldı.");
-
+        
         LevelData_SO currentLevelData = levelManager.GetCurrentLevelData();
         if (currentLevelData != null)
         {
@@ -70,7 +72,6 @@ public class GameManager : MonoBehaviour
         if (_currentState != GameState.Playing) return;
         _currentState = GameState.LevelFailed;
         inputManager.enabled = false;
-        Debug.Log("Oyun Durumu: KAYBEDİLDİ - Input Kapatıldı.");
     }
 
     public void RestartLevel()

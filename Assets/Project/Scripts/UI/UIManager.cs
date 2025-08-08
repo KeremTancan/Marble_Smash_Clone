@@ -17,6 +17,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField] private Slider scoreSlider;
     [SerializeField] private TextMeshProUGUI currencyText;
+    [SerializeField] private TextMeshProUGUI levelText; 
     
     [Header("Oyun Sonu Panelleri")]
     [SerializeField] private GameObject levelCompletePanel;
@@ -88,6 +89,10 @@ public class UIManager : MonoBehaviour
         if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
         if (levelFailedPanel != null) levelFailedPanel.SetActive(false);
         if (fireworkModePanel != null) fireworkModePanel.SetActive(false);
+        if (levelText != null)
+        {
+            levelText.text = $"LEVEL {levelID}";
+        }
         UpdateAllPowerUpButtons();
     }
     

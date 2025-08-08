@@ -9,6 +9,13 @@ using System.Collections.Generic;
     public int MarblesToUnlock;
 }
 
+[System.Serializable]
+public struct PrePlacedShapeData
+{
+    public ShapeData_SO ShapeData; 
+    public Vector2Int AnchorPosition; 
+}
+
 [CreateAssetMenu(fileName = "Level_00", menuName = "Marble Smash/Level Data")]
 public class LevelData_SO : ScriptableObject
 {
@@ -23,6 +30,9 @@ public class LevelData_SO : ScriptableObject
     
     [Header("Kilitli Nokta Ayarları")]
     public List<LockedNodeData> LockedNodes;
+    
+    [Tooltip("Seviye başında ızgarada hazır olarak gelecek şekiller.")]
+    public List<PrePlacedShapeData> PrePlacedShapes;
 
     [Header("Oyun Kuralları")]
     public int ExplosionGoal = 20;

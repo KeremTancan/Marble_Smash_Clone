@@ -10,6 +10,7 @@ public class GridManager : MonoBehaviour
     [Header("Prefabs")]
     [SerializeField] private GridNode gridNodePrefab;
     [SerializeField] private LineRenderer connectionPrefab;
+    [SerializeField] private GameObject marblePrefab;
     [Header("Yöneticiler")]
     [SerializeField] private ConnectionManager connectionManager;
     [Header("Güvenli Alan Ayarları")]
@@ -235,16 +236,16 @@ public class GridManager : MonoBehaviour
     
     public void GenerateGrid(LevelData_SO levelData)
     {
-        if (levelData == null || gridNodePrefab == null || connectionPrefab == null)
+        if (levelData == null || gridNodePrefab == null || connectionPrefab == null || marblePrefab == null)
         {
             Debug.LogError("GridManager'da gerekli prefab veya veri dosyaları atanmamış!", this);
             return;
         }
-    
+
         ClearGrid();
         _connectionsParent = new GameObject("Grid_Connections").transform;
         _connectionsParent.SetParent(this.transform);
-        
+
         var lockedNodeDictionary = new Dictionary<Vector2Int, int>();
         foreach (var lockedNodeData in levelData.LockedNodes)
         {
@@ -271,14 +272,43 @@ public class GridManager : MonoBehaviour
                 }
             }
         }
-    
         FitGridToSafeArea();
+        PlacePrePlacedShapes(levelData);
         foreach (GridNode node in _grid.Values)
         {
             ConnectToNeighbors(node);
         }
     }
-    
+    private void PlacePrePlacedShapes(LevelData_SO levelData)
+    {
+        if (levelData.AvailableColors == null || levelData.AvailableColors.Colors.Count == 0) return;
+
+        foreach (var shapeToPlace in levelData.PrePlacedShapes)
+        {
+            Color randomColor = levelData.AvailableColors.Colors[Random.Range(0, levelData.AvailableColors.Colors.Count)];
+
+            foreach (var marbleOffset in shapeToPlace.ShapeData.MarblePositions)
+            {
+                Vector2Int targetPos = shapeToPlace.AnchorPosition + marbleOffset;
+                if (_grid.TryGetValue(targetPos, out GridNode targetNode))
+                {
+                    if (targetNode.IsAvailable)
+                    {
+                        GameObject marbleObj = Instantiate(marblePrefab, targetNode.transform.position, Quaternion.identity, this.transform);
+                        marbleObj.transform.localScale = new Vector3(0.45f, 0.45f, 0.45f);
+                    
+                        Marble newMarble = marbleObj.GetComponent<Marble>();
+                        newMarble.SetColor(randomColor);
+                        targetNode.SetOccupied(newMarble);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Hazır şekil yerleştirilemedi: {targetPos} noktası dolu veya kilitli!");
+                    }
+                }
+            }
+        }
+    }
     public GridNode GetClosestNode(Vector3 worldPosition)
     {
         if (_grid.Count == 0) return null;
