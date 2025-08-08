@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4608192a44793934e9aea303e88b0c9c, type: 3}
+  m_Name: Level_50
+  m_EditorClassIdentifier: 
+  LevelID: 50
+  GridDimensions: {x: 7, y: 8}
+  DisabledNodes:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 5, y: 0}
+  - {x: 6, y: 0}
+  - {x: 0, y: 7}
+  - {x: 1, y: 7}
+  - {x: 5, y: 7}
+  - {x: 6, y: 7}
+  PrePlacedShapes:
+  - ShapeData: {fileID: 11400000, guid: 2ca9847c24d6fdc45b06f404de54b15b, type: 2}
+    AnchorPosition: {x: 3, y: 1}
+  - ShapeData: {fileID: 11400000, guid: 2ca9847c24d6fdc45b06f404de54b15b, type: 2}
+    AnchorPosition: {x: 3, y: 6}
+  ExplosionGoal: 120
+  AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
+  Reward: 300
+  LockedNodes:
+  - Position: {x: 3, y: 3}
+    MarblesToUnlock: 60
+  - Position: {x: 3, y: 4}
+    MarblesToUnlock: 80

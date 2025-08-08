@@ -30,32 +30,33 @@ public class GridManager : MonoBehaviour
     {
         var shapeOffsets = shapeData.MarblePositions;
         if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
-    
+
         foreach (GridNode potentialStartNode in _grid.Values)
         {
-            if (!potentialStartNode.IsAvailable)
-            {
-                continue;
-            }
-
             bool isPlacementPossibleHere = true;
             foreach (Vector2Int offset in shapeOffsets)
             {
                 Vector2Int targetGridPos = potentialStartNode.GridPosition + offset;
 
-                if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
+                if (_grid.TryGetValue(targetGridPos, out GridNode targetNode))
+                {
+                    if (!targetNode.IsAvailable)
+                    {
+                        isPlacementPossibleHere = false;
+                        break;
+                    }
+                }
+                else
                 {
                     isPlacementPossibleHere = false;
                     break;
                 }
             }
-        
             if (isPlacementPossibleHere)
             {
-                return true;
+                return true; 
             }
         }
-    
         return false;
     }
     

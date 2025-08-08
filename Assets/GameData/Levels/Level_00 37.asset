@@ -10,13 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4608192a44793934e9aea303e88b0c9c, type: 3}
-  m_Name: Level_00 1
+  m_Name: Level_37
   m_EditorClassIdentifier: 
-  LevelID: 1
-  GridDimensions: {x: 5, y: 6}
+  LevelID: 37
+  GridDimensions: {x: 7, y: 8}
   DisabledNodes: []
-  LockedNodes: []
-  PrePlacedShapes: []
-  ExplosionGoal: 10
+  PrePlacedShapes:
+  - ShapeData: {fileID: 11400000, guid: 66713cca1c77f884981c46d619c39947, type: 2}
+    AnchorPosition: {x: 1, y: 1}
+  - ShapeData: {fileID: 11400000, guid: 66713cca1c77f884981c46d619c39947, type: 2}
+    AnchorPosition: {x: 5, y: 1}
+  ExplosionGoal: 85
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
-  Reward: 50
+  Reward: 185
+  LockedNodes:
+  - Position: {x: 3, y: 4}
+    MarblesToUnlock: 50
