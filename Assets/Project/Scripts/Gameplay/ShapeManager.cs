@@ -182,8 +182,7 @@ public class ShapeManager : MonoBehaviour
 
         if (levelId <= 10) shapeCountToUse = 5;
         else if (levelId <= 20) shapeCountToUse = 7;
-        else if (levelId <= 30) shapeCountToUse = 9;
-        else if (levelId <= 40) shapeCountToUse = 11;
+        else if (levelId <= 30) shapeCountToUse = 10;
         else shapeCountToUse = allShapesInOrder.Count;
 
         shapeCountToUse = Mathf.Min(shapeCountToUse, allShapesInOrder.Count);
