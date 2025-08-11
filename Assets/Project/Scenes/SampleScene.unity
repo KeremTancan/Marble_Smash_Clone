@@ -818,12 +818,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levels:
+  - {fileID: 11400000, guid: e97495956f01cf24f9673507b0262811, type: 2}
   - {fileID: 11400000, guid: 4ae593232bb1de84093c8a3947634fd2, type: 2}
   - {fileID: 11400000, guid: 0708f00053c359544a38d7a048ed77f2, type: 2}
   - {fileID: 11400000, guid: 731f23d0a00cd7f4dbc2839549ad5865, type: 2}
   - {fileID: 11400000, guid: c12468b2dfd8bc74980b1ef83d7b818e, type: 2}
   - {fileID: 11400000, guid: 88a641f7533aac342affe827eb2a6d36, type: 2}
-  - {fileID: 11400000, guid: e97495956f01cf24f9673507b0262811, type: 2}
   - {fileID: 11400000, guid: 64567543fd0b41d4e8266007cf5491a5, type: 2}
   - {fileID: 11400000, guid: 75708461c8cabcb409177691ad52fee6, type: 2}
   - {fileID: 11400000, guid: fdc7ce36d9c957f4287a8b2b5c05f8b4, type: 2}
@@ -5592,21 +5592,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridManager: {fileID: 1714769846}
-  allAvailableShapes:
+  allShapesInOrder:
   - {fileID: 11400000, guid: ae863fcfe790e9e4d9ccb3ac0c219c45, type: 2}
   - {fileID: 11400000, guid: 10f612f3c7461a545a08a28cd4b528b7, type: 2}
-  - {fileID: 11400000, guid: d7e5e852a967ec747b939705e17f54b4, type: 2}
   - {fileID: 11400000, guid: 66713cca1c77f884981c46d619c39947, type: 2}
-  - {fileID: 11400000, guid: a4c50a82df5172142910abdad44e673c, type: 2}
   - {fileID: 11400000, guid: ebd989e068af25f4a98a0f1b0a07b81c, type: 2}
-  - {fileID: 11400000, guid: d3ca6d05d67506b43b27efeda3886159, type: 2}
-  - {fileID: 11400000, guid: c9c9bad00c422b545bb9b5c3bfe244a5, type: 2}
-  - {fileID: 11400000, guid: 1ab8dce6df81869409fc8f775f6d52d9, type: 2}
   - {fileID: 11400000, guid: 9b57ec60a00189a4f8335c13bc038fbf, type: 2}
-  - {fileID: 11400000, guid: 69b07d46e84f3e6499aabd7d8a618753, type: 2}
   - {fileID: 11400000, guid: 2ca9847c24d6fdc45b06f404de54b15b, type: 2}
   - {fileID: 11400000, guid: 2388b5565f2a41c40b2b5446d7a4208b, type: 2}
+  - {fileID: 11400000, guid: 69b07d46e84f3e6499aabd7d8a618753, type: 2}
+  - {fileID: 11400000, guid: d3ca6d05d67506b43b27efeda3886159, type: 2}
+  - {fileID: 11400000, guid: c9c9bad00c422b545bb9b5c3bfe244a5, type: 2}
   - {fileID: 11400000, guid: 3d822d7912d81094094024b0a116f26e, type: 2}
+  - {fileID: 11400000, guid: d7e5e852a967ec747b939705e17f54b4, type: 2}
+  - {fileID: 11400000, guid: 1ab8dce6df81869409fc8f775f6d52d9, type: 2}
+  - {fileID: 11400000, guid: a4c50a82df5172142910abdad44e673c, type: 2}
   shapePrefab: {fileID: 7634101156222539598, guid: ff061cc16dffddd4284ccf44a8746644, type: 3}
   marblePrefab: {fileID: 8124537315900163787, guid: 4bda3e5f7cd719741baeaecabc7aac8f, type: 3}
   queueSlots:
@@ -5615,6 +5615,7 @@ MonoBehaviour:
   - {fileID: 1151404444}
   horizontalSpacing: 0.4
   verticalSpacing: 0.3464
+  helpPercentageThreshold: 40
 --- !u!1 &1878024722
 GameObject:
   m_ObjectHideFlags: 0

@@ -132,28 +132,33 @@ public class Shape : MonoBehaviour
     
     #region Değişmeyen Kodlar
     public List<Marble> GetMarbles() => _marbles;
-    public void Initialize(ShapeData_SO shapeData, ColorPalette_SO palette, GameObject marblePrefab, float hSpacing, float vSpacing){
+    public void Initialize(ShapeData_SO shapeData, ColorPalette_SO palette, GameObject marblePrefab, float hSpacing, float vSpacing, Color? overrideColor = null)
+    {
         this.ShapeData = shapeData;
         gameObject.name = $"Shape_{shapeData.name}";
         foreach (Transform child in transform) Destroy(child.gameObject);
         _marbles.Clear();
         var localPositions = new List<Vector3>();
-        foreach (var gridPos in shapeData.MarblePositions){
+        foreach (var gridPos in shapeData.MarblePositions) {
             float worldX = gridPos.x * hSpacing + (gridPos.y % 2 != 0 ? hSpacing / 2f : 0);
             float worldY = gridPos.y * vSpacing;
             localPositions.Add(new Vector3(worldX, worldY, 0));
         }
         Vector3 centerOffset = Vector3.zero;
-        if (localPositions.Count > 0){
+        if (localPositions.Count > 0) {
             foreach (var pos in localPositions) centerOffset += pos;
             centerOffset /= localPositions.Count;
         }
-        foreach (var pos in localPositions){
+        bool useOverrideColor = overrideColor.HasValue;
+
+        foreach (var pos in localPositions) {
             GameObject marbleObj = Instantiate(marblePrefab, this.transform);
             marbleObj.transform.localPosition = pos - centerOffset;
             Marble newMarble = marbleObj.GetComponent<Marble>();
-            Color randomColor = palette.Colors[Random.Range(0, palette.Colors.Count)];
-            newMarble.SetColor(randomColor);
+
+            Color colorToSet = useOverrideColor ? overrideColor.Value : palette.Colors[Random.Range(0, palette.Colors.Count)];
+        
+            newMarble.SetColor(colorToSet);
             _marbles.Add(newMarble);
         }
     }

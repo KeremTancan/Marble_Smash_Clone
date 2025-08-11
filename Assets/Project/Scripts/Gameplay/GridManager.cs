@@ -5,59 +5,65 @@ using UnityEngine;
 
 public class GridManager : MonoBehaviour
 {
-    [Header("Seviye Verisi")]
-    [SerializeField] private LevelData_SO currentLevelData;
-    [Header("Prefabs")]
-    [SerializeField] private GridNode gridNodePrefab;
+    [Header("Seviye Verisi")] [SerializeField]
+    private LevelData_SO currentLevelData;
+
+    [Header("Prefabs")] [SerializeField] private GridNode gridNodePrefab;
     [SerializeField] private LineRenderer connectionPrefab;
     [SerializeField] private GameObject marblePrefab;
-    [Header("Yöneticiler")]
-    [SerializeField] private ConnectionManager connectionManager;
-    [Header("Güvenli Alan Ayarları")]
-    [SerializeField] private Rect safeArea = new Rect(-4f, -4f, 8f, 8f);
-    [Header("Izgara Ayarları")]
-    [SerializeField] private float horizontalSpacing = 1.0f;
+
+    [Header("Yöneticiler")] [SerializeField]
+    private ConnectionManager connectionManager;
+
+    [Header("Güvenli Alan Ayarları")] [SerializeField]
+    private Rect safeArea = new Rect(-4f, -4f, 8f, 8f);
+
+    [Header("Izgara Ayarları")] [SerializeField]
+    private float horizontalSpacing = 1.0f;
+
     [SerializeField] private float verticalSpacing = 0.866f;
-    [Header("Roket Ayarları")]
-    [SerializeField] private Rocket rocketPrefab;
-    
+
+    [Header("Roket Ayarları")] [SerializeField]
+    private Rocket rocketPrefab;
+
     private readonly Dictionary<Vector2Int, GridNode> _grid = new Dictionary<Vector2Int, GridNode>();
     private Transform _connectionsParent;
 
     public Dictionary<Vector2Int, GridNode> GetGrid() => _grid;
 
-public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
-{
-    var shapeOffsets = shapeData.MarblePositions;
-    if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
-    var availableNodes = _grid.Values.Where(node => node.IsAvailable).ToList();
-
-    foreach (GridNode potentialAnchorNode in availableNodes)
+    public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
     {
-        foreach (Vector2Int shapeAnchorOffset in shapeOffsets)
-        {
-            bool isThisPlacementPossible = true;
-            
-            foreach (Vector2Int marbleOffset in shapeOffsets)
-            {
-                Vector2Int targetGridPos = potentialAnchorNode.GridPosition - shapeAnchorOffset + marbleOffset;
+        var shapeOffsets = shapeData.MarblePositions;
+        if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
+        var availableNodes = _grid.Values.Where(node => node.IsAvailable).ToList();
 
-                if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
+        foreach (GridNode potentialAnchorNode in availableNodes)
+        {
+            foreach (Vector2Int shapeAnchorOffset in shapeOffsets)
+            {
+                bool isThisPlacementPossible = true;
+
+                foreach (Vector2Int marbleOffset in shapeOffsets)
                 {
-                    isThisPlacementPossible = false;
-                    break; 
+                    Vector2Int targetGridPos = potentialAnchorNode.GridPosition - shapeAnchorOffset + marbleOffset;
+
+                    if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
+                    {
+                        isThisPlacementPossible = false;
+                        break;
+                    }
+                }
+
+                if (isThisPlacementPossible)
+                {
+                    return true;
                 }
             }
-
-            if (isThisPlacementPossible)
-            {
-                return true;
-            }
         }
+
+        return false;
     }
-    return false;
-}
-    
+
     public void LaunchFireworksFromNode(GridNode startNode)
     {
         if (rocketPrefab == null)
@@ -74,19 +80,19 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
             diagonalOffsets = new Vector2Int[]
             {
                 new Vector2Int(-1, 1), // Sol-üst
-                new Vector2Int(0, 1),  // Sağ-üst
-                new Vector2Int(-1, -1),// Sol-alt
-                new Vector2Int(0, -1)  // Sağ-alt
+                new Vector2Int(0, 1), // Sağ-üst
+                new Vector2Int(-1, -1), // Sol-alt
+                new Vector2Int(0, -1) // Sağ-alt
             };
         }
-        else 
+        else
         {
             diagonalOffsets = new Vector2Int[]
             {
-                new Vector2Int(0, 1),   // Sol-üst
-                new Vector2Int(1, 1),  // Sağ-üst
-                new Vector2Int(0, -1),  // Sol-alt
-                new Vector2Int(1, -1)  // Sağ-alt
+                new Vector2Int(0, 1), // Sol-üst
+                new Vector2Int(1, 1), // Sağ-üst
+                new Vector2Int(0, -1), // Sol-alt
+                new Vector2Int(1, -1) // Sağ-alt
             };
         }
 
@@ -103,10 +109,11 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
 
         ExplodeMarble(startNode.PlacedMarble);
     }
+
     public void ExplodeMarble(Marble marble)
     {
         if (marble == null || marble.ParentNode == null || !marble.ParentNode.IsOccupied) return;
-        
+
         EventManager.RaiseOnMarblesExploded(1);
         GridNode node = marble.ParentNode;
         Destroy(marble.gameObject);
@@ -114,7 +121,56 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
         connectionManager.UpdateAllConnections();
     }
     
+    public Dictionary<Color, int> GetNeighboringColors(List<GridNode> placementNodes)
+    {
+        var colorCounts = new Dictionary<Color, int>();
+        var checkedNeighbors = new HashSet<GridNode>();
+
+        foreach (var node in placementNodes)
+        {
+            foreach (var neighbor in GetNeighbors(node))
+            {
+                if (neighbor.IsOccupied && !checkedNeighbors.Contains(neighbor) && !placementNodes.Contains(neighbor))
+                {
+                    Color color = neighbor.PlacedMarble.MarbleColor;
+                    if (!colorCounts.ContainsKey(color))
+                        colorCounts[color] = 0;
+                
+                    colorCounts[color]++;
+                    checkedNeighbors.Add(neighbor);
+                }
+            }
+        }
+        return colorCounts;
+    }
+
+    public List<GridNode> GetPlacementNodes(ShapeData_SO shapeData, Vector2Int anchorPosition)
+    {
+        var nodes = new List<GridNode>();
+        foreach (var offset in shapeData.MarblePositions)
+        {
+            if (_grid.TryGetValue(anchorPosition + offset, out GridNode node))
+            {
+                nodes.Add(node);
+            }
+        }
+        return nodes;
+    }
+    public bool CanShapeBePlacedAt(ShapeData_SO shapeData, Vector2Int anchorPosition)
+    {
+        foreach (var offset in shapeData.MarblePositions)
+        {
+            Vector2Int targetPos = anchorPosition + offset;
+            if (!_grid.TryGetValue(targetPos, out GridNode targetNode) || !targetNode.IsAvailable)
+            {
+                return false; 
+            }
+        }
+        return true;
+    }
+
     #region Mevcut, Değişmeyen Kodlar
+
     public void PlaceShape(Shape shape, Dictionary<Marble, GridNode> placement)
     {
         List<GridNode> placedNodes = new List<GridNode>();
@@ -128,12 +184,13 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
             destinationNode.SetOccupied(marbleToMove);
             placedNodes.Add(destinationNode);
         }
+
         Destroy(shape.gameObject);
-        
+
         connectionManager.UpdateAllConnections();
         StartCoroutine(ProcessMatchesAfterPlacement(placedNodes));
     }
-    
+
     private IEnumerator ProcessMatchesAfterPlacement(List<GridNode> placedNodes, float delay = 0.25f)
     {
         yield return new WaitForSeconds(delay);
@@ -147,7 +204,7 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
                 continue;
 
             List<GridNode> connectedGroup = FindConnectedGroup(startNode);
-            
+
             if (connectedGroup.Count >= 5)
             {
                 explosionOccurred = true;
@@ -157,7 +214,7 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
                 }
             }
         }
-        
+
         if (explosionOccurred)
         {
             EventManager.RaiseOnMarblesExploded(allNodesToExplode.Count);
@@ -170,14 +227,14 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
                     node.SetVacant();
                 }
             }
-            
+
             Debug.Log(allNodesToExplode.Count + " adet top patlatıldı!");
             connectionManager.UpdateAllConnections();
         }
-        
+
         EventManager.RaiseOnTurnCompleted();
     }
-    
+
     private List<GridNode> FindConnectedGroup(GridNode startNode)
     {
         var connectedNodes = new List<GridNode>();
@@ -187,10 +244,10 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
         var nodesToVisit = new Queue<GridNode>();
         var visitedNodes = new HashSet<GridNode>();
         var matchColor = startNode.PlacedMarble.MarbleColor;
-        
+
         nodesToVisit.Enqueue(startNode);
         visitedNodes.Add(startNode);
-        
+
         while (nodesToVisit.Count > 0)
         {
             GridNode currentNode = nodesToVisit.Dequeue();
@@ -198,41 +255,52 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
 
             foreach (GridNode neighbor in GetNeighbors(currentNode))
             {
-                if (neighbor != null && neighbor.IsOccupied && !visitedNodes.Contains(neighbor) && neighbor.PlacedMarble.MarbleColor == matchColor)
+                if (neighbor != null && neighbor.IsOccupied && !visitedNodes.Contains(neighbor) &&
+                    neighbor.PlacedMarble.MarbleColor == matchColor)
                 {
                     visitedNodes.Add(neighbor);
                     nodesToVisit.Enqueue(neighbor);
                 }
             }
         }
+
         return connectedNodes;
     }
-    
+
     public List<GridNode> GetNeighbors(GridNode node)
     {
         List<GridNode> neighbors = new List<GridNode>();
         Vector2Int[] neighborOffsets;
-        if (node.GridPosition.y % 2 == 0) {
-            neighborOffsets = new Vector2Int[] {
+        if (node.GridPosition.y % 2 == 0)
+        {
+            neighborOffsets = new Vector2Int[]
+            {
                 new Vector2Int(-1, 0), new Vector2Int(1, 0),
                 new Vector2Int(0, 1), new Vector2Int(-1, 1),
                 new Vector2Int(0, -1), new Vector2Int(-1, -1)
             };
-        } else {
-            neighborOffsets = new Vector2Int[] {
+        }
+        else
+        {
+            neighborOffsets = new Vector2Int[]
+            {
                 new Vector2Int(-1, 0), new Vector2Int(1, 0),
                 new Vector2Int(1, 1), new Vector2Int(0, 1),
                 new Vector2Int(1, -1), new Vector2Int(0, -1)
             };
         }
-        foreach (var offset in neighborOffsets) {
-            if (_grid.TryGetValue(node.GridPosition + offset, out GridNode neighborNode)) {
+
+        foreach (var offset in neighborOffsets)
+        {
+            if (_grid.TryGetValue(node.GridPosition + offset, out GridNode neighborNode))
+            {
                 neighbors.Add(neighborNode);
             }
         }
+
         return neighbors;
     }
-    
+
     public void GenerateGrid(LevelData_SO levelData)
     {
         if (levelData == null || gridNodePrefab == null || connectionPrefab == null || marblePrefab == null)
@@ -271,6 +339,7 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
                 }
             }
         }
+
         FitGridToSafeArea();
         PlacePrePlacedShapes(levelData);
         foreach (GridNode node in _grid.Values)
@@ -278,13 +347,15 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
             ConnectToNeighbors(node);
         }
     }
+
     private void PlacePrePlacedShapes(LevelData_SO levelData)
     {
         if (levelData.AvailableColors == null || levelData.AvailableColors.Colors.Count == 0) return;
 
         foreach (var shapeToPlace in levelData.PrePlacedShapes)
         {
-            Color randomColor = levelData.AvailableColors.Colors[Random.Range(0, levelData.AvailableColors.Colors.Count)];
+            Color randomColor =
+                levelData.AvailableColors.Colors[Random.Range(0, levelData.AvailableColors.Colors.Count)];
 
             foreach (var marbleOffset in shapeToPlace.ShapeData.MarblePositions)
             {
@@ -293,9 +364,10 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
                 {
                     if (targetNode.IsAvailable)
                     {
-                        GameObject marbleObj = Instantiate(marblePrefab, targetNode.transform.position, Quaternion.identity, this.transform);
+                        GameObject marbleObj = Instantiate(marblePrefab, targetNode.transform.position,
+                            Quaternion.identity, this.transform);
                         marbleObj.transform.localScale = new Vector3(0.45f, 0.45f, 0.45f);
-                    
+
                         Marble newMarble = marbleObj.GetComponent<Marble>();
                         newMarble.SetColor(randomColor);
                         targetNode.SetOccupied(newMarble);
@@ -308,22 +380,27 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
             }
         }
     }
+
     public GridNode GetClosestNode(Vector3 worldPosition)
     {
         if (_grid.Count == 0) return null;
         GridNode closestNode = null;
         float minDistanceSqr = float.MaxValue;
-        foreach (GridNode node in _grid.Values) {
+        foreach (GridNode node in _grid.Values)
+        {
             float distanceSqr = (node.transform.position - worldPosition).sqrMagnitude;
-            if (distanceSqr < minDistanceSqr) {
+            if (distanceSqr < minDistanceSqr)
+            {
                 minDistanceSqr = distanceSqr;
                 closestNode = node;
             }
         }
+
         float threshold = horizontalSpacing * 1.5f;
         if (minDistanceSqr > threshold * threshold) return null;
         return closestNode;
     }
+
     public Dictionary<Marble, GridNode> GetTargetPlacement(Shape shape)
     {
         var placement = new Dictionary<Marble, GridNode>();
@@ -333,31 +410,39 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
         GridNode anchorNode = GetClosestNode(centerMarble.transform.position);
         if (anchorNode == null) return placement;
         Vector3 anchorMarblePos = centerMarble.transform.position;
-        for (int i = 0; i < marbles.Count; i++) {
+        for (int i = 0; i < marbles.Count; i++)
+        {
             Marble currentMarble = marbles[i];
             Vector3 offset = currentMarble.transform.position - anchorMarblePos;
             Vector3 targetWorldPos = anchorNode.transform.position + offset;
             GridNode targetNode = FindNearestNodeUnconditionally(targetWorldPos);
-            if (targetNode != null) {
+            if (targetNode != null)
+            {
                 placement[currentMarble] = targetNode;
             }
         }
+
         return placement;
     }
+
     private GridNode FindNearestNodeUnconditionally(Vector3 worldPosition)
     {
         if (_grid.Count == 0) return null;
         GridNode closestNode = null;
         float minDistanceSqr = float.MaxValue;
-        foreach (GridNode node in _grid.Values) {
+        foreach (GridNode node in _grid.Values)
+        {
             float distanceSqr = (node.transform.position - worldPosition).sqrMagnitude;
-            if (distanceSqr < minDistanceSqr) {
+            if (distanceSqr < minDistanceSqr)
+            {
                 minDistanceSqr = distanceSqr;
                 closestNode = node;
             }
         }
+
         return closestNode;
     }
+
     public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
     {
         var targetNodes = placement.Values.ToList();
@@ -365,12 +450,15 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
         {
             return false;
         }
+
         foreach (var node in targetNodes)
         {
             if (node == null || !node.IsAvailable) return false;
         }
+
         return true;
     }
+
     private void FitGridToSafeArea()
     {
         if (_grid.Count == 0) return;
@@ -378,40 +466,53 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
         float widthScale = gridBounds.size.x > 0 ? safeArea.width / gridBounds.size.x : 1f;
         float heightScale = gridBounds.size.y > 0 ? safeArea.height / gridBounds.size.y : 1f;
         float scale = Mathf.Min(widthScale, heightScale);
-        if (scale < 1.0f) {
+        if (scale < 1.0f)
+        {
             transform.localScale = Vector3.one * scale;
         }
+
         gridBounds = GetGridBounds();
         Vector3 finalCenterOffset = gridBounds.center - (Vector3)safeArea.center;
         transform.position -= finalCenterOffset;
     }
+
     private Bounds GetGridBounds()
     {
         if (_grid.Count == 0) return new Bounds();
         var firstNodePos = _grid.Values.First().transform.position;
         var bounds = new Bounds(firstNodePos, Vector3.zero);
-        foreach (var node in _grid.Values) {
+        foreach (var node in _grid.Values)
+        {
             bounds.Encapsulate(node.transform.position);
         }
+
         return bounds;
     }
+
     private void ConnectToNeighbors(GridNode node)
     {
         var pos = node.GridPosition;
         var neighborOffsets = new List<Vector2Int> { new Vector2Int(-1, 0) };
-        if (pos.y % 2 == 0) {
+        if (pos.y % 2 == 0)
+        {
             neighborOffsets.Add(new Vector2Int(-1, -1));
             neighborOffsets.Add(new Vector2Int(0, -1));
-        } else {
+        }
+        else
+        {
             neighborOffsets.Add(new Vector2Int(0, -1));
             neighborOffsets.Add(new Vector2Int(1, -1));
         }
-        foreach (var offset in neighborOffsets) {
-            if (_grid.TryGetValue(pos + offset, out GridNode neighbor)) {
+
+        foreach (var offset in neighborOffsets)
+        {
+            if (_grid.TryGetValue(pos + offset, out GridNode neighbor))
+            {
                 CreateConnection(node, neighbor);
             }
         }
     }
+
     private void CreateConnection(GridNode from, GridNode to)
     {
         LineRenderer line = Instantiate(connectionPrefab, _connectionsParent);
@@ -420,6 +521,7 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
         line.SetPosition(1, to.transform.position);
         line.gameObject.name = $"GridConn_{from.GridPosition}_{to.GridPosition}";
     }
+
     private void ClearGrid()
     {
         transform.localScale = Vector3.one;
@@ -430,5 +532,6 @@ public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
                 Destroy(node.gameObject);
         _grid.Clear();
     }
+
     #endregion
 }
