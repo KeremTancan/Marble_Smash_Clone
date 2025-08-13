@@ -19,14 +19,15 @@ MonoBehaviour:
   - {x: 3, y: 5}
   PrePlacedShapes: []
   ExplosionGoal: 90
+  AllowedShapes: []
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 190
   LockedNodes:
   - Position: {x: 1, y: 3}
-    MarblesToUnlock: 40
+    MarblesToUnlock: 10
   - Position: {x: 5, y: 3}
-    MarblesToUnlock: 40
+    MarblesToUnlock: 20
   - Position: {x: 1, y: 4}
-    MarblesToUnlock: 40
+    MarblesToUnlock: 30
   - Position: {x: 5, y: 4}
     MarblesToUnlock: 40

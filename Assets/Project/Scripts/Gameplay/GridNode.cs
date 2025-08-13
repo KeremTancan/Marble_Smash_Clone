@@ -4,15 +4,15 @@ using UnityEngine.UI;
 public class GridNode : MonoBehaviour
 {
     [Header("Kilit Görseli Referansları")]
-    [SerializeField] private GameObject lockVisual; 
-    [SerializeField] private Text lockValueText;   
+    [SerializeField] private GameObject lockVisual;
+    [SerializeField] private Text lockValueText;
 
     public Vector2Int GridPosition { get; private set; }
     public bool IsOccupied { get; private set; }
     public Marble PlacedMarble { get; private set; }
     public bool IsLocked { get; private set; }
     public int MarblesToUnlock { get; private set; }
-    public bool IsAvailable => !IsOccupied && !IsLocked; 
+    public bool IsAvailable => !IsOccupied && !IsLocked && gameObject.activeSelf;
     
     private SpriteRenderer _spriteRenderer;
     private Color _originalColor;
@@ -27,6 +27,7 @@ public class GridNode : MonoBehaviour
 
         if (lockVisual != null) lockVisual.SetActive(false);
     }
+    
     public void Lock(int marblesToUnlock)
     {
         IsLocked = true;
