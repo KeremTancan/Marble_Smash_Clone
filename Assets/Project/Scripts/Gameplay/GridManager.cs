@@ -126,6 +126,87 @@ public class GridManager : MonoBehaviour
         return nodes;
     }
 
+    public void GenerateGrid(LevelData_SO levelData)
+    {
+        if (levelData == null || gridNodePrefab == null || connectionPrefab == null || marblePrefab == null)
+        {
+            Debug.LogError("GridManager'da gerekli prefab veya veri dosyaları atanmamış!", this);
+            return;
+        }
+
+        ClearGrid();
+        _connectionsParent = new GameObject("Grid_Connections").transform;
+        _connectionsParent.SetParent(this.transform);
+
+        var lockedNodeDictionary = new Dictionary<Vector2Int, int>();
+        foreach (var lockedNodeData in levelData.LockedNodes)
+        {
+            lockedNodeDictionary[lockedNodeData.Position] = lockedNodeData.MarblesToUnlock;
+        }
+
+        for (int y = 0; y < levelData.GridDimensions.y; y++)
+        {
+            for (int x = 0; x < levelData.GridDimensions.x; x++)
+            {
+                var gridPos = new Vector2Int(x, y);
+                float worldX = x * horizontalSpacing + (y % 2 != 0 ? horizontalSpacing / 2f : 0);
+                float worldY = y * verticalSpacing;
+                var worldPosition = new Vector3(worldX, worldY, 0);
+                GridNode newNode = Instantiate(gridNodePrefab, worldPosition, Quaternion.identity, this.transform);
+                newNode.Initialize(gridPos);
+                _grid.Add(gridPos, newNode);
+
+                if (levelData.DisabledNodes.Contains(gridPos))
+                {
+                    newNode.gameObject.SetActive(false);
+                }
+
+                if (lockedNodeDictionary.TryGetValue(gridPos, out int marblesToUnlock))
+                {
+                    newNode.Lock(marblesToUnlock);
+                }
+            }
+        }
+
+        FitGridToSafeArea();
+        PlacePrePlacedShapes(levelData);
+
+        foreach (GridNode node in _grid.Values)
+        {
+            if (node.gameObject.activeSelf)
+            {
+                ConnectToNeighbors(node);
+            }
+        }
+    }
+
+    private void ConnectToNeighbors(GridNode node)
+    {
+        var pos = node.GridPosition;
+        var neighborOffsets = new List<Vector2Int> { new Vector2Int(-1, 0) };
+        if (pos.y % 2 == 0)
+        {
+            neighborOffsets.Add(new Vector2Int(-1, -1));
+            neighborOffsets.Add(new Vector2Int(0, -1));
+        }
+        else
+        {
+            neighborOffsets.Add(new Vector2Int(0, -1));
+            neighborOffsets.Add(new Vector2Int(1, -1));
+        }
+
+        foreach (var offset in neighborOffsets)
+        {
+            if (_grid.TryGetValue(pos + offset, out GridNode neighbor))
+            {
+                if (neighbor.gameObject.activeSelf)
+                {
+                    CreateConnection(node, neighbor);
+                }
+            }
+        }
+    }
+
     public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
     {
         var targetNodes = placement.Values.ToList();
@@ -141,6 +222,7 @@ public class GridManager : MonoBehaviour
 
         return true;
     }
+
     public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
     {
         var shapeOffsets = shapeData.MarblePositions;
@@ -163,13 +245,14 @@ public class GridManager : MonoBehaviour
 
                 if (isThisEntirePlacementValid)
                 {
-                    return true; 
+                    return true;
                 }
             }
         }
 
         return false;
     }
+
     public bool CanShapeBePlacedAt(ShapeData_SO shapeData, Vector2Int anchorPosition)
     {
         foreach (var offset in shapeData.MarblePositions)
@@ -316,53 +399,6 @@ public class GridManager : MonoBehaviour
         return neighbors;
     }
 
-    public void GenerateGrid(LevelData_SO levelData)
-    {
-        if (levelData == null || gridNodePrefab == null || connectionPrefab == null || marblePrefab == null)
-        {
-            Debug.LogError("GridManager'da gerekli prefab veya veri dosyaları atanmamış!", this);
-            return;
-        }
-
-        ClearGrid();
-        _connectionsParent = new GameObject("Grid_Connections").transform;
-        _connectionsParent.SetParent(this.transform);
-
-        var lockedNodeDictionary = new Dictionary<Vector2Int, int>();
-        foreach (var lockedNodeData in levelData.LockedNodes)
-        {
-            lockedNodeDictionary[lockedNodeData.Position] = lockedNodeData.MarblesToUnlock;
-        }
-
-        for (int y = 0; y < levelData.GridDimensions.y; y++)
-        {
-            for (int x = 0; x < levelData.GridDimensions.x; x++)
-            {
-                var gridPos = new Vector2Int(x, y);
-                if (levelData.DisabledNodes.Contains(gridPos)) continue;
-
-                float worldX = x * horizontalSpacing + (y % 2 != 0 ? horizontalSpacing / 2f : 0);
-                float worldY = y * verticalSpacing;
-                var worldPosition = new Vector3(worldX, worldY, 0);
-                GridNode newNode = Instantiate(gridNodePrefab, worldPosition, Quaternion.identity, this.transform);
-                newNode.Initialize(gridPos);
-                _grid.Add(gridPos, newNode);
-
-                if (lockedNodeDictionary.TryGetValue(gridPos, out int marblesToUnlock))
-                {
-                    newNode.Lock(marblesToUnlock);
-                }
-            }
-        }
-
-        FitGridToSafeArea();
-        PlacePrePlacedShapes(levelData);
-        foreach (GridNode node in _grid.Values)
-        {
-            ConnectToNeighbors(node);
-        }
-    }
-
     private void PlacePrePlacedShapes(LevelData_SO levelData)
     {
         if (levelData.AvailableColors == null || levelData.AvailableColors.Colors.Count == 0) return;
@@ -486,30 +522,6 @@ public class GridManager : MonoBehaviour
         }
 
         return bounds;
-    }
-
-    private void ConnectToNeighbors(GridNode node)
-    {
-        var pos = node.GridPosition;
-        var neighborOffsets = new List<Vector2Int> { new Vector2Int(-1, 0) };
-        if (pos.y % 2 == 0)
-        {
-            neighborOffsets.Add(new Vector2Int(-1, -1));
-            neighborOffsets.Add(new Vector2Int(0, -1));
-        }
-        else
-        {
-            neighborOffsets.Add(new Vector2Int(0, -1));
-            neighborOffsets.Add(new Vector2Int(1, -1));
-        }
-
-        foreach (var offset in neighborOffsets)
-        {
-            if (_grid.TryGetValue(pos + offset, out GridNode neighbor))
-            {
-                CreateConnection(node, neighbor);
-            }
-        }
     }
 
     private void CreateConnection(GridNode from, GridNode to)
