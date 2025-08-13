@@ -16,11 +16,12 @@ MonoBehaviour:
   GridDimensions: {x: 7, y: 8}
   DisabledNodes: []
   PrePlacedShapes:
-  - ShapeData: {fileID: 11400000, guid: 2ca9847c24d6fdc45b06f404de54b15b, type: 2}
+  - ShapeData: {fileID: 11400000, guid: 2388b5565f2a41c40b2b5446d7a4208b, type: 2}
     AnchorPosition: {x: 1, y: 4}
-  - ShapeData: {fileID: 11400000, guid: 2ca9847c24d6fdc45b06f404de54b15b, type: 2}
+  - ShapeData: {fileID: 11400000, guid: 2388b5565f2a41c40b2b5446d7a4208b, type: 2}
     AnchorPosition: {x: 4, y: 4}
   ExplosionGoal: 70
+  AllowedShapes: []
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 165
   LockedNodes:
