@@ -31,39 +31,6 @@ public class GridManager : MonoBehaviour
 
     public Dictionary<Vector2Int, GridNode> GetGrid() => _grid;
 
-    public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
-    {
-        var shapeOffsets = shapeData.MarblePositions;
-        if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
-        var availableNodes = _grid.Values.Where(node => node.IsAvailable).ToList();
-
-        foreach (GridNode potentialAnchorNode in availableNodes)
-        {
-            foreach (Vector2Int shapeAnchorOffset in shapeOffsets)
-            {
-                bool isThisPlacementPossible = true;
-
-                foreach (Vector2Int marbleOffset in shapeOffsets)
-                {
-                    Vector2Int targetGridPos = potentialAnchorNode.GridPosition - shapeAnchorOffset + marbleOffset;
-
-                    if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
-                    {
-                        isThisPlacementPossible = false;
-                        break;
-                    }
-                }
-
-                if (isThisPlacementPossible)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     public void LaunchFireworksFromNode(GridNode startNode)
     {
         if (rocketPrefab == null)
@@ -120,7 +87,7 @@ public class GridManager : MonoBehaviour
         node.SetVacant();
         connectionManager.UpdateAllConnections();
     }
-    
+
     public Dictionary<Color, int> GetNeighboringColors(List<GridNode> placementNodes)
     {
         var colorCounts = new Dictionary<Color, int>();
@@ -135,12 +102,13 @@ public class GridManager : MonoBehaviour
                     Color color = neighbor.PlacedMarble.MarbleColor;
                     if (!colorCounts.ContainsKey(color))
                         colorCounts[color] = 0;
-                
+
                     colorCounts[color]++;
                     checkedNeighbors.Add(neighbor);
                 }
             }
         }
+
         return colorCounts;
     }
 
@@ -154,7 +122,53 @@ public class GridManager : MonoBehaviour
                 nodes.Add(node);
             }
         }
+
         return nodes;
+    }
+
+    public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
+    {
+        var targetNodes = placement.Values.ToList();
+        if (targetNodes.Count != targetNodes.Distinct().Count())
+        {
+            return false;
+        }
+
+        foreach (var node in targetNodes)
+        {
+            if (node == null || !node.IsAvailable) return false;
+        }
+
+        return true;
+    }
+    public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
+    {
+        var shapeOffsets = shapeData.MarblePositions;
+        if (shapeOffsets == null || shapeOffsets.Count == 0) return false;
+
+        foreach (GridNode potentialAnchorNode in _grid.Values)
+        {
+            foreach (Vector2Int shapeAnchorOffset in shapeOffsets)
+            {
+                bool isThisEntirePlacementValid = true;
+                foreach (Vector2Int marbleOffset in shapeOffsets)
+                {
+                    Vector2Int targetGridPos = potentialAnchorNode.GridPosition - shapeAnchorOffset + marbleOffset;
+                    if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
+                    {
+                        isThisEntirePlacementValid = false;
+                        break;
+                    }
+                }
+
+                if (isThisEntirePlacementValid)
+                {
+                    return true; 
+                }
+            }
+        }
+
+        return false;
     }
     public bool CanShapeBePlacedAt(ShapeData_SO shapeData, Vector2Int anchorPosition)
     {
@@ -163,9 +177,10 @@ public class GridManager : MonoBehaviour
             Vector2Int targetPos = anchorPosition + offset;
             if (!_grid.TryGetValue(targetPos, out GridNode targetNode) || !targetNode.IsAvailable)
             {
-                return false; 
+                return false;
             }
         }
+
         return true;
     }
 
@@ -441,22 +456,6 @@ public class GridManager : MonoBehaviour
         }
 
         return closestNode;
-    }
-
-    public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
-    {
-        var targetNodes = placement.Values.ToList();
-        if (targetNodes.Count != targetNodes.Distinct().Count())
-        {
-            return false;
-        }
-
-        foreach (var node in targetNodes)
-        {
-            if (node == null || !node.IsAvailable) return false;
-        }
-
-        return true;
     }
 
     private void FitGridToSafeArea()
