@@ -75,7 +75,7 @@ public class ShapeManager : MonoBehaviour
         }
         else
         {
-            StartCoroutine(SpawnBatchWithDelay(0.5f, false));
+            StartCoroutine(SpawnBatchWithDelay(0.1f, false));
         }
     }
     
@@ -180,7 +180,7 @@ public class ShapeManager : MonoBehaviour
         int levelId = _currentLevelData.LevelID;
         int shapeCountToUse;
 
-        if (levelId <= 10) shapeCountToUse = 5;
+        if (levelId <= 10) shapeCountToUse = 4;
         else if (levelId <= 20) shapeCountToUse = 7;
         else if (levelId <= 30) shapeCountToUse = 10;
         else shapeCountToUse = allShapesInOrder.Count;
