@@ -3,24 +3,20 @@ using UnityEngine;
 
 public class LevelManager : MonoBehaviour
 {
-    [Tooltip("Oyundaki tüm seviyelerin sıralı listesi. Buraya sürükleyip bırakın.")]
+    [Header("Seviye Ayarları")]
+    [Tooltip("Oyundaki tüm seviyelerin sıralı listesi.")]
     [SerializeField] private List<LevelData_SO> levels;
+    [Tooltip("Oyun bittikten sonra döngünün başlayacağı seviye numarası (Örn: 15)")]
+    [SerializeField] private int loopStartLevel = 15;
 
-    private int _currentLevelIndex;
-    private const string LEVEL_INDEX_KEY = "PlayerLevel";
+    private int _displayLevel;
+    private const string DISPLAY_LEVEL_KEY = "PlayerDisplayLevel"; 
 
     private void Awake()
     {
-        // Oyuncunun kaldığı seviyeyi cihaz hafızasından yükle.
-        // Eğer daha önce hiç oynanmamışsa, 0'dan başla.
-        _currentLevelIndex = PlayerPrefs.GetInt(LEVEL_INDEX_KEY, 0);
-
-        if (_currentLevelIndex >= levels.Count)
-        {
-            _currentLevelIndex = levels.Count - 1;
-        }
+        _displayLevel = PlayerPrefs.GetInt(DISPLAY_LEVEL_KEY, 1);
     }
-
+    
     public LevelData_SO GetCurrentLevelData()
     {
         if (levels == null || levels.Count == 0)
@@ -28,21 +24,36 @@ public class LevelManager : MonoBehaviour
             Debug.LogError("LevelManager'da hiç seviye tanımlanmamış!");
             return null;
         }
-        return levels[_currentLevelIndex];
+
+        int actualLevelIndex;
+        int totalDesignedLevels = levels.Count;
+        int loopStartIndex = loopStartLevel - 1;
+
+        if (_displayLevel <= totalDesignedLevels)
+        {
+            actualLevelIndex = _displayLevel - 1;
+        }
+        else
+        {
+            int loopRange = totalDesignedLevels - loopStartIndex;
+            int indexInLoop = (_displayLevel - totalDesignedLevels - 1) % loopRange;
+            actualLevelIndex = loopStartIndex + indexInLoop;
+        }
+        
+        actualLevelIndex = Mathf.Clamp(actualLevelIndex, 0, totalDesignedLevels - 1);
+
+        return levels[actualLevelIndex];
+    }
+
+    public int GetCurrentDisplayLevel()
+    {
+        return _displayLevel;
     }
 
     public void AdvanceToNextLevel()
     {
-        _currentLevelIndex++;
-        
-        // Eğer oyuncu son seviyeyi de geçtiyse, son seviyede kalmaya devam etsin.
-        if (_currentLevelIndex >= levels.Count)
-        {
-            _currentLevelIndex = levels.Count - 1;
-        }
-
-        // Yeni seviye numarasını cihaz hafızasına kaydet.
-        PlayerPrefs.SetInt(LEVEL_INDEX_KEY, _currentLevelIndex);
+        _displayLevel++;
+        PlayerPrefs.SetInt(DISPLAY_LEVEL_KEY, _displayLevel);
         PlayerPrefs.Save();
     }
 }

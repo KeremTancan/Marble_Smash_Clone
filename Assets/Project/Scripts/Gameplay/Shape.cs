@@ -22,116 +22,19 @@ public class Shape : MonoBehaviour
     private Coroutine _activeCoroutine;
     private Dictionary<Marble, GridNode> _lastValidPlacement;
     private List<GridNode> _lastMarkedNodes = new List<GridNode>();
-
     private GridNode _lastClosestNode = null;
+
+    private void OnDestroy()
+    {
+        if (_ghostInstance != null) Destroy(_ghostInstance.gameObject);
+    }
 
     private void Awake()
     {
         _originalScale = transform.localScale;
-        _gridManager = FindObjectOfType<GridManager>();
+        _gridManager = FindFirstObjectByType<GridManager>();
     }
     
-    public void OnDrag(Vector3 newPosition)
-    {
-        transform.position = newPosition + pickupOffset;
-
-        GridNode currentClosestNode = _gridManager.GetClosestNode(_marbles[0].transform.position);
-
-        if (currentClosestNode == _lastClosestNode)
-        {
-            return;
-        }
-
-        _lastClosestNode = currentClosestNode;
-        ResetMarkedNodes();
-
-        if (currentClosestNode != null)
-        {
-            var targetPlacement = _gridManager.GetTargetPlacement(this);
-            bool isValid = _gridManager.CheckPlacementValidity(targetPlacement);
-            
-            if (isValid)
-            {
-                _ghostInstance.gameObject.SetActive(true);
-                _ghostInstance.UpdatePositions(targetPlacement);
-                _lastValidPlacement = targetPlacement;
-            }
-            else
-            {
-                _ghostInstance.gameObject.SetActive(false);
-                MarkNodes(targetPlacement.Values, Color.red);
-                _lastValidPlacement = null;
-            }
-        }
-        else
-        {
-            _ghostInstance.gameObject.SetActive(false);
-            _lastValidPlacement = null;
-        }
-    }
-
-    public void OnSelected()
-    {
-        _originalPosition = transform.position;
-        OriginalParent = transform.parent;
-        
-        if (_ghostInstance == null)
-        {
-            _ghostInstance = Instantiate(ghostPrefab);
-            _ghostInstance.Initialize(this);
-        }
-        _ghostInstance.gameObject.SetActive(false);
-        ResetMarkedNodes();
-        _lastClosestNode = null; // Seçimi sıfırla
-
-        RunCoroutine(PickupRoutine());
-    }
-
-    public void OnDropped()
-    {
-        ResetMarkedNodes();
-        if (_ghostInstance != null)
-        {
-            _ghostInstance.gameObject.SetActive(false);
-        }
-
-        if (_lastValidPlacement != null)
-        {
-            _gridManager.PlaceShape(this, _lastValidPlacement);
-            IsPlaced = true;
-            this.enabled = false;
-            Destroy(_ghostInstance.gameObject);
-        }
-        else
-        {
-            RunCoroutine(ReturnRoutine());
-        }
-        _lastClosestNode = null; // Bırakmayı sıfırla
-    }
-    
-    private void MarkNodes(IEnumerable<GridNode> nodes, Color color)
-    {
-        foreach (var node in nodes)
-        {
-            if(node != null) // Güvenlik kontrolü
-            {
-                node.SetHighlightColor(color);
-                _lastMarkedNodes.Add(node);
-            }
-        }
-    }
-
-    private void ResetMarkedNodes()
-    {
-        foreach (var node in _lastMarkedNodes)
-        {
-            if(node != null) node.ResetColor();
-        }
-        _lastMarkedNodes.Clear();
-    }
-    
-    #region Değişmeyen Kodlar
-    public List<Marble> GetMarbles() => _marbles;
     public void Initialize(ShapeData_SO shapeData, ColorPalette_SO palette, GameObject marblePrefab, float hSpacing, float vSpacing, Color? overrideColor = null)
     {
         this.ShapeData = shapeData;
@@ -149,30 +52,109 @@ public class Shape : MonoBehaviour
             foreach (var pos in localPositions) centerOffset += pos;
             centerOffset /= localPositions.Count;
         }
+        
         bool useOverrideColor = overrideColor.HasValue;
 
         foreach (var pos in localPositions) {
             GameObject marbleObj = Instantiate(marblePrefab, this.transform);
             marbleObj.transform.localPosition = pos - centerOffset;
+            marbleObj.transform.localScale = marblePrefab.transform.localScale;
+            
             Marble newMarble = marbleObj.GetComponent<Marble>();
-
             Color colorToSet = useOverrideColor ? overrideColor.Value : palette.Colors[Random.Range(0, palette.Colors.Count)];
-        
             newMarble.SetColor(colorToSet);
             _marbles.Add(newMarble);
         }
     }
-    private void RunCoroutine(IEnumerator routine){
+
+    public void OnSelected()
+    {
+        _originalPosition = transform.position;
+        OriginalParent = transform.parent;
+        
+        if (_ghostInstance == null)
+        {
+            _ghostInstance = Instantiate(ghostPrefab);
+            _ghostInstance.Initialize(this);
+        }
+        _ghostInstance.gameObject.SetActive(false);
+        ResetMarkedNodes();
+        _lastClosestNode = null;
+        
+        RunCoroutine(PickupRoutine());
+    }
+
+    public void OnDrag(Vector3 newPosition)
+    {
+        transform.position = newPosition;
+
+        GridNode currentClosestNode = _gridManager.GetClosestNode(transform.position);
+        if (currentClosestNode == _lastClosestNode) return;
+        
+        _lastClosestNode = currentClosestNode;
+        ResetMarkedNodes();
+        _lastValidPlacement = null;
+
+        if (currentClosestNode != null)
+        {
+            var targetPlacement = _gridManager.GetTargetPlacement(this);
+            
+            if (targetPlacement.Count == _marbles.Count && _gridManager.CheckPlacementValidity(targetPlacement))
+            {
+                _ghostInstance.gameObject.SetActive(true);
+                _ghostInstance.UpdatePositions(targetPlacement);
+                _lastValidPlacement = targetPlacement;
+            }
+            else
+            {
+                _ghostInstance.gameObject.SetActive(false);
+                if (targetPlacement.Count > 0)
+                {
+                    MarkNodes(targetPlacement.Values, Color.red);
+                }
+            }
+        }
+        else
+        {
+            _ghostInstance.gameObject.SetActive(false);
+        }
+    }
+
+    public void OnDropped()
+    {
+        ResetMarkedNodes();
+        if (_ghostInstance != null) _ghostInstance.gameObject.SetActive(false);
+
+        if (_lastValidPlacement != null)
+        {
+            _gridManager.PlaceShape(this, _lastValidPlacement);
+            IsPlaced = true;
+            this.enabled = false;
+        }
+        else
+        {
+            RunCoroutine(ReturnRoutine());
+        }
+        _lastClosestNode = null;
+    }
+    
+    public List<Marble> GetMarbles() => _marbles;
+
+    private void RunCoroutine(IEnumerator routine)
+    {
         if (_activeCoroutine != null) StopCoroutine(_activeCoroutine);
         _activeCoroutine = StartCoroutine(routine);
     }
-    private IEnumerator PickupRoutine(){
+
+    private IEnumerator PickupRoutine()
+    {
         Vector3 startPos = transform.position;
         Vector3 targetPos = transform.position + pickupOffset;
         Vector3 startScale = transform.localScale;
         Vector3 targetScale = _originalScale * pickupScale;
         float timer = 0f;
-        while (timer < scaleDuration){
+        while (timer < scaleDuration)
+        {
             float t = timer / scaleDuration;
             transform.position = Vector3.Lerp(startPos, targetPos, t);
             transform.localScale = Vector3.Lerp(startScale, targetScale, t);
@@ -182,11 +164,14 @@ public class Shape : MonoBehaviour
         transform.position = targetPos;
         transform.localScale = targetScale;
     }
-    private IEnumerator ReturnRoutine(){
+
+    private IEnumerator ReturnRoutine()
+    {
         Vector3 startPos = transform.position;
         Vector3 startScale = transform.localScale;
         float timer = 0f;
-        while (timer < scaleDuration){
+        while (timer < scaleDuration)
+        {
             float t = timer / scaleDuration;
             transform.position = Vector3.Lerp(startPos, _originalPosition, t);
             transform.localScale = Vector3.Lerp(startScale, _originalScale, t);
@@ -197,5 +182,25 @@ public class Shape : MonoBehaviour
         transform.localScale = _originalScale;
         transform.SetParent(OriginalParent);
     }
-    #endregion
+    
+    private void MarkNodes(IEnumerable<GridNode> nodes, Color color)
+    {
+        foreach (var node in nodes)
+        {
+            if(node != null)
+            {
+                node.SetHighlightColor(color);
+                _lastMarkedNodes.Add(node);
+            }
+        }
+    }
+
+    private void ResetMarkedNodes()
+    {
+        foreach (var node in _lastMarkedNodes)
+        {
+            if(node != null) node.ResetColor();
+        }
+        _lastMarkedNodes.Clear();
+    }
 }

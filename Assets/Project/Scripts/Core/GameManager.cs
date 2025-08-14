@@ -36,8 +36,8 @@ public class GameManager : MonoBehaviour
     public void StartLevel()
     {
         LevelData_SO currentLevelData = levelManager.GetCurrentLevelData();
+        int displayLevel = levelManager.GetCurrentDisplayLevel();
 
-        // Kontrol listesine connectionManager'ı da ekledik
         if (gridManager == null || shapeManager == null || scoreManager == null || inputManager == null || connectionManager == null || currentLevelData == null)
         {
             Debug.LogError("GameManager'a gerekli yönetici veya seviye verisi atanmamış!");
@@ -51,7 +51,7 @@ public class GameManager : MonoBehaviour
         gridManager.GenerateGrid(currentLevelData);
         connectionManager.UpdateAllConnections();
         shapeManager.PrepareInitialShapes(currentLevelData);
-        EventManager.RaiseOnLevelStarted(currentLevelData.LevelID);
+        EventManager.RaiseOnLevelStarted(displayLevel);
     }
 
     private void HandleLevelComplete()

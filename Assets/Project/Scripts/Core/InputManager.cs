@@ -20,39 +20,13 @@ public class InputManager : MonoBehaviour
     {
         if (powerUpManager != null && powerUpManager.IsFireworkModeActive)
         {
-            if (Input.GetMouseButtonDown(0))
-            {
-                HandleFireworkClick();
-            }
+            if (Input.GetMouseButtonDown(0)) HandleFireworkClick();
             return;
         }
         
         if (Input.GetMouseButtonDown(0)) HandleMouseDown();
         else if (Input.GetMouseButton(0) && _draggedShape != null) HandleMouseDrag();
         else if (Input.GetMouseButtonUp(0) && _draggedShape != null) HandleMouseUp();
-    }
-
-    private void HandleFireworkClick()
-    {
-        RaycastHit hit;
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out hit))
-        {
-            Marble marble = hit.collider.GetComponent<Marble>();
-            if (marble != null && marble.ParentNode != null && marble.ParentNode.IsOccupied)
-            {
-                if (powerUpManager.TryUsePowerUp(fireworkPowerUpData))
-                {
-                    gridManager.LaunchFireworksFromNode(marble.ParentNode);
-                    powerUpManager.DeactivateFireworkMode();
-                }
-                else
-                {
-                    Debug.Log("Roket kullanılamadı (Yetersiz Bakiye/Hak)");
-                }
-            }
-        }
     }
 
     private void HandleMouseDown()
@@ -72,8 +46,36 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    private void HandleMouseDrag() { _draggedShape.OnDrag(GetMouseWorldPos() + _offset); }
-    private void HandleMouseUp() { _draggedShape.OnDropped(); _draggedShape = null; }
+    private void HandleMouseDrag()
+    {
+        _draggedShape.OnDrag(GetMouseWorldPos() + _offset);
+    }
+
+    private void HandleMouseUp()
+    {
+        _draggedShape.OnDropped();
+        _draggedShape = null;
+    }
+
+    private void HandleFireworkClick()
+    {
+        RaycastHit hit;
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            Marble marble = hit.collider.GetComponent<Marble>();
+            if (marble != null && marble.ParentNode != null && marble.ParentNode.IsOccupied)
+            {
+                if (powerUpManager.TryUsePowerUp(fireworkPowerUpData))
+                {
+                    gridManager.LaunchFireworksFromNode(marble.ParentNode);
+                    powerUpManager.DeactivateFireworkMode();
+                }
+            }
+        }
+    }
+
     private Vector3 GetMouseWorldPos()
     {
         Vector3 mousePoint = Input.mousePosition;

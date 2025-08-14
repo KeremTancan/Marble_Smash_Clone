@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
 public struct IntelligentSpawn
 {
     public ShapeData_SO ShapeData;
@@ -79,6 +80,34 @@ public class ShapeManager : MonoBehaviour
         }
     }
     
+    private IntelligentSpawn GetNextShape(bool forceHelp)
+    {
+        var availableShapes = GetAvailableShapesForCurrentLevel();
+        
+        int totalNodes = gridManager.GetGrid().Count(n => !n.Value.IsLocked);
+        int availableNodeCount = gridManager.GetGrid().Values.Count(n => n.IsAvailable);
+        float availablePercentage = totalNodes > 0 ? ((float)availableNodeCount / totalNodes) * 100f : 0f;
+
+        bool needsHelp = (availablePercentage <= helpPercentageThreshold) || forceHelp;
+        
+        string logMessage = $"<color=cyan>AKILLI SPAWN KONTROLÜ:</color> Izgara Doluluğu: %{100 - availablePercentage:F1} (Eşik: %{100-helpPercentageThreshold}). Yardım Zorlandı: {forceHelp}.";
+        Debug.Log(logMessage);
+
+        if (needsHelp)
+        {
+            var bestSpawn = FindBestPossibleMove(availableShapes);
+            if (bestSpawn.ShapeData != null)
+            {
+                Debug.Log("<color=green>SONUÇ: Yardımcı hamle bulundu ve veriliyor.</color>");
+                return bestSpawn;
+            }
+        }
+        
+        Debug.Log("<color=yellow>SONUÇ: Yardım gerekmiyor veya bulunamadı, rastgele şekil veriliyor.</color>");
+        var randomShape = availableShapes[Random.Range(0, availableShapes.Count)];
+        return new IntelligentSpawn { ShapeData = randomShape, OverrideColor = null };
+    }
+    
     private IntelligentSpawn FindBestPossibleMove(List<ShapeData_SO> shapes)
     {
         var allAvailableNodes = gridManager.GetGrid().Values.Where(n => n.IsAvailable).ToList();
@@ -128,43 +157,12 @@ public class ShapeManager : MonoBehaviour
     private void SpawnNewShapeBatch(bool forceHelp)
     {
         if (queueSlots.Length == 0) return;
+        
         _shapesLeftInQueue = queueSlots.Length;
-
-        var availableShapes = GetAvailableShapesForCurrentLevel();
-        int totalNodes = gridManager.GetGrid().Count(n => !n.Value.IsLocked);
-        int availableNodeCount = gridManager.GetGrid().Values.Count(n => n.IsAvailable);
-        float availablePercentage = totalNodes > 0 ? ((float)availableNodeCount / totalNodes) * 100f : 0f;
-
-        bool needsHelp = (availablePercentage <= helpPercentageThreshold) || forceHelp;
         
-        IntelligentSpawn helpfulSpawn = new IntelligentSpawn { ShapeData = null, OverrideColor = null };
-        if (needsHelp)
-        {
-            helpfulSpawn = FindBestPossibleMove(availableShapes);
-        }
-
-        List<Transform> slotsToFill = new List<Transform>(queueSlots);
-        
-        if (helpfulSpawn.ShapeData != null)
-        {
-            int randomIndex = Random.Range(0, slotsToFill.Count);
-            Transform helpfulSlot = slotsToFill[randomIndex];
-            slotsToFill.RemoveAt(randomIndex);
-            
-            SpawnSingleShape(helpfulSlot, helpfulSpawn);
-            Debug.Log("<color=green>SONUÇ: Bir adet yardımcı hamle bulundu ve slota yerleştirildi.</color>");
-        }
-
-        foreach (var slot in slotsToFill)
-        {
-            var randomShape = availableShapes[Random.Range(0, availableShapes.Count)];
-            var randomSpawn = new IntelligentSpawn { ShapeData = randomShape, OverrideColor = null };
-            SpawnSingleShape(slot, randomSpawn);
-        }
-        
-        if(helpfulSpawn.ShapeData == null)
-        {
-            Debug.Log("<color=yellow>SONUÇ: Yardım gerekmiyor veya bulunamadı, tüm slotlar rastgele dolduruldu.</color>");
+        foreach (var slot in queueSlots) { 
+            IntelligentSpawn spawnInfo = GetNextShape(forceHelp);
+            SpawnSingleShape(slot, spawnInfo);
         }
     }
 
@@ -180,9 +178,10 @@ public class ShapeManager : MonoBehaviour
         int levelId = _currentLevelData.LevelID;
         int shapeCountToUse;
 
-        if (levelId <= 10) shapeCountToUse = 4;
+        if (levelId <= 10) shapeCountToUse = 5;
         else if (levelId <= 20) shapeCountToUse = 7;
-        else if (levelId <= 30) shapeCountToUse = 10;
+        else if (levelId <= 30) shapeCountToUse = 9;
+        else if (levelId <= 40) shapeCountToUse = 11;
         else shapeCountToUse = allShapesInOrder.Count;
 
         shapeCountToUse = Mathf.Min(shapeCountToUse, allShapesInOrder.Count);
