@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Level_02
   m_EditorClassIdentifier: 
   LevelID: 2
-  GridDimensions: {x: 5, y: 7}
+  GridDimensions: {x: 5, y: 5}
   DisabledNodes: []
   PrePlacedShapes: []
   ExplosionGoal: 15
+  AllowedShapes: []
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 50
   LockedNodes: []

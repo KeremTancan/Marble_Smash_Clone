@@ -17,10 +17,11 @@ MonoBehaviour:
   DisabledNodes: []
   PrePlacedShapes:
   - ShapeData: {fileID: 11400000, guid: 2ca9847c24d6fdc45b06f404de54b15b, type: 2}
-    AnchorPosition: {x: 0, y: 1}
+    AnchorPosition: {x: 1, y: 1}
   - ShapeData: {fileID: 11400000, guid: 2ca9847c24d6fdc45b06f404de54b15b, type: 2}
-    AnchorPosition: {x: 4, y: 1}
+    AnchorPosition: {x: 5, y: 1}
   ExplosionGoal: 60
+  AllowedShapes: []
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 135
   LockedNodes:
