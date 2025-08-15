@@ -67,7 +67,8 @@ public class GridManager : MonoBehaviour
         foreach (var offset in diagonalOffsets)
         {
             Vector2Int theoreticalNeighborPos = startNode.GridPosition + offset;
-            float worldX = theoreticalNeighborPos.x * horizontalSpacing + (theoreticalNeighborPos.y % 2 != 0 ? horizontalSpacing / 2f : 0);
+            float worldX = theoreticalNeighborPos.x * horizontalSpacing +
+                           (theoreticalNeighborPos.y % 2 != 0 ? horizontalSpacing / 2f : 0);
             float worldY = theoreticalNeighborPos.y * verticalSpacing;
             Vector3 theoreticalWorldPos = transform.TransformPoint(new Vector3(worldX, worldY, 0));
             Vector3 direction = (theoreticalWorldPos - startNode.transform.position).normalized;
@@ -130,6 +131,8 @@ public class GridManager : MonoBehaviour
     public bool CheckPlacementValidity(Dictionary<Marble, GridNode> placement)
     {
         var targetNodes = placement.Values.ToList();
+        if (targetNodes.Count != placement.Count) return false;
+
         if (targetNodes.Count != targetNodes.Distinct().Count())
         {
             return false;
@@ -142,6 +145,7 @@ public class GridManager : MonoBehaviour
 
         return true;
     }
+
     public bool CanShapeBePlacedAnywhere(ShapeData_SO shapeData)
     {
         var shapeOffsets = shapeData.MarblePositions;
@@ -155,6 +159,7 @@ public class GridManager : MonoBehaviour
                 foreach (Vector2Int marbleOffset in shapeOffsets)
                 {
                     Vector2Int targetGridPos = potentialAnchorNode.GridPosition - shapeAnchorOffset + marbleOffset;
+
                     if (!_grid.TryGetValue(targetGridPos, out GridNode targetNode) || !targetNode.IsAvailable)
                     {
                         isThisEntirePlacementValid = false;
@@ -169,8 +174,9 @@ public class GridManager : MonoBehaviour
             }
         }
 
-        return false;
+        return false; 
     }
+
     public bool CanShapeBePlacedAt(ShapeData_SO shapeData, Vector2Int anchorPosition)
     {
         foreach (var offset in shapeData.MarblePositions)

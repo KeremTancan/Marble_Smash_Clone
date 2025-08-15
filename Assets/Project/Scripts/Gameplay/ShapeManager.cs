@@ -82,7 +82,7 @@ public class ShapeManager : MonoBehaviour
     private IntelligentSpawn FindBestPossibleMove(List<ShapeData_SO> shapes)
     {
         var allAvailableNodes = gridManager.GetGrid().Values.Where(n => n.IsAvailable).ToList();
-        
+    
         if (allAvailableNodes.Count < 4)
         {
             shapes = shapes.Where(s => s.MarblePositions.Count <= allAvailableNodes.Count).ToList();
@@ -92,15 +92,19 @@ public class ShapeManager : MonoBehaviour
         {
             foreach (var startNode in allAvailableNodes)
             {
-                var placementNodes = gridManager.GetPlacementNodes(shape, startNode.GridPosition);
-
-                if (placementNodes.Count == shape.MarblePositions.Count && placementNodes.All(n => n.IsAvailable))
+                if(gridManager.CanShapeBePlacedAt(shape, startNode.GridPosition))
                 {
+                    var placementNodes = gridManager.GetPlacementNodes(shape, startNode.GridPosition);
                     var neighborColors = gridManager.GetNeighboringColors(placementNodes);
                     var bestColor = neighborColors.OrderByDescending(kvp => kvp.Value).FirstOrDefault();
 
                     if (bestColor.Key != default(Color) && (bestColor.Value + shape.MarblePositions.Count) >= 5)
                     {
+                        var overrides = new Dictionary<int, Color>();
+                        for(int i = 0; i < shape.MarblePositions.Count; i++)
+                        {
+                            overrides[i] = bestColor.Key;
+                        }
                         return new IntelligentSpawn { ShapeData = shape, OverrideColor = bestColor.Key };
                     }
                 }
