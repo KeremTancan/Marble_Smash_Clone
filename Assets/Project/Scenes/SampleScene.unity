@@ -5615,7 +5615,10 @@ MonoBehaviour:
   - {fileID: 1151404444}
   horizontalSpacing: 0.4
   verticalSpacing: 0.3464
-  helpPercentageThreshold: 40
+  assistanceThreshold: 40
+  hindranceThreshold: 60
+  hindranceChance: 50
+  assistanceChance: 50
 --- !u!1 &1878024722
 GameObject:
   m_ObjectHideFlags: 0

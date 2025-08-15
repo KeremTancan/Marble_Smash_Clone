@@ -10,7 +10,6 @@ public struct IntelligentSpawn
 
 public class ShapeManager : MonoBehaviour
 {
-    // --- (Mevcut Referanslar ve Ayarlar) ---
     [Header("Referanslar")]
     [SerializeField] private GridManager gridManager;
     
@@ -26,7 +25,6 @@ public class ShapeManager : MonoBehaviour
     [SerializeField] private float horizontalSpacing = 1.0f;
     [SerializeField] private float verticalSpacing = 0.866f;
 
-    // --- YENİ EKLENEN AYARLAR ---
     [Header("Dinamik Zorluk Ayarları")]
     [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin altına düştüğünde YARDIM sistemi devreye girer.")]
     [Range(0f, 100f)]
@@ -36,9 +34,10 @@ public class ShapeManager : MonoBehaviour
     [Range(0f, 100f)]
     [SerializeField] private float hindranceThreshold = 70f;
 
-    [Tooltip("Köstek sistemi koşulları sağlandığında, köstek olmanın gerçekleşme olasılığı (Yüzde).")]
     [Range(0f, 100f)]
     [SerializeField] private float hindranceChance = 50f;
+    [Range(0f, 100f)]
+    [SerializeField] private float assistanceChance = 50f;
     
     private LevelData_SO _currentLevelData;
     private int _shapesLeftInQueue;
@@ -88,12 +87,11 @@ public class ShapeManager : MonoBehaviour
             StartCoroutine(SpawnBatchWithDelay(0.5f));
         }
     }
-    
     private IEnumerator SpawnBatchWithDelay(float delay, bool forceAssistance = false)
     {
         yield return new WaitForSeconds(delay);
         SpawnNewShapeBatch(forceAssistance);
-        CheckForLoseCondition();
+        
     }
     
     private void SpawnNewShapeBatch(bool forceAssistance)
@@ -131,7 +129,10 @@ public class ShapeManager : MonoBehaviour
 
         if (availablePercentage <= assistanceThreshold)
         {
-            return SpawnMode.Assistance;
+            if (Random.Range(0f, 100f) <= assistanceChance)
+            {
+                return SpawnMode.Assistance;
+            }
         }
 
         if (availablePercentage >= hindranceThreshold)
