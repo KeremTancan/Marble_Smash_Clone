@@ -18,7 +18,7 @@ MonoBehaviour:
   PrePlacedShapes:
   - ShapeData: {fileID: 11400000, guid: c9c9bad00c422b545bb9b5c3bfe244a5, type: 2}
     AnchorPosition: {x: 0, y: 1}
-  - ShapeData: {fileID: 11400000, guid: c9c9bad00c422b545bb9b5c3bfe244a5, type: 2}
+  - ShapeData: {fileID: 11400000, guid: 66713cca1c77f884981c46d619c39947, type: 2}
     AnchorPosition: {x: 6, y: 6}
   ExplosionGoal: 85
   AllowedShapes: []

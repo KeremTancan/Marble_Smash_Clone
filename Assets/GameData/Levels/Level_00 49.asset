@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4608192a44793934e9aea303e88b0c9c, type: 3}
-  m_Name: Level_49
+  m_Name: Level_00 49
   m_EditorClassIdentifier: 
   LevelID: 49
   GridDimensions: {x: 7, y: 8}
@@ -25,6 +25,7 @@ MonoBehaviour:
   - {x: 5, y: 6}
   PrePlacedShapes: []
   ExplosionGoal: 110
+  AllowedShapes: []
   AvailableColors: {fileID: 11400000, guid: 5b551dedb881b634e9e2436775737b70, type: 2}
   Reward: 290
   LockedNodes:

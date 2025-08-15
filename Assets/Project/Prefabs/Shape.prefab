@@ -46,5 +46,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pickupScale: 1.5
   scaleDuration: 0.1
-  pickupOffset: {x: 0, y: 0.5, z: 0}
+  pickupOffset: {x: 0, y: 0.75, z: 0}
   ghostPrefab: {fileID: 5908632545349534988, guid: 52e86ce779ad55340a2ab599a700c048, type: 3}
