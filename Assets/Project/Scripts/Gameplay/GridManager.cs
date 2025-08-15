@@ -66,12 +66,13 @@ public class GridManager : MonoBehaviour
         // Her bir çapraz yöne bir roket fırlat
         foreach (var offset in diagonalOffsets)
         {
-            if (_grid.TryGetValue(startNode.GridPosition + offset, out GridNode neighborNode))
-            {
-                Vector3 direction = (neighborNode.transform.position - startNode.transform.position).normalized;
-                Rocket newRocket = Instantiate(rocketPrefab, startNode.transform.position, Quaternion.identity);
-                newRocket.Launch(direction, this);
-            }
+            Vector2Int theoreticalNeighborPos = startNode.GridPosition + offset;
+            float worldX = theoreticalNeighborPos.x * horizontalSpacing + (theoreticalNeighborPos.y % 2 != 0 ? horizontalSpacing / 2f : 0);
+            float worldY = theoreticalNeighborPos.y * verticalSpacing;
+            Vector3 theoreticalWorldPos = transform.TransformPoint(new Vector3(worldX, worldY, 0));
+            Vector3 direction = (theoreticalWorldPos - startNode.transform.position).normalized;
+            Rocket newRocket = Instantiate(rocketPrefab, startNode.transform.position, Quaternion.identity);
+            newRocket.Launch(direction, this);
         }
 
         ExplodeMarble(startNode.PlacedMarble);
