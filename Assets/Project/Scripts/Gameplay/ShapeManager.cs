@@ -5,16 +5,16 @@ using UnityEngine;
 public struct IntelligentSpawn
 {
     public ShapeData_SO ShapeData;
-    public Color? OverrideColor;
+    public Dictionary<Vector2Int, Color> OverrideColors; 
 }
 
 public class ShapeManager : MonoBehaviour
 {
+    // --- (Mevcut Referanslar ve Ayarlar) ---
     [Header("Referanslar")]
     [SerializeField] private GridManager gridManager;
     
     [Header("Şekil Veritabanı")]
-    [Tooltip("Tüm şekillerin ZORLUK SIRASINA GÖRE eklendiği ana liste. 0 = en kolay.")]
     [SerializeField] private List<ShapeData_SO> allShapesInOrder;
 
     [Header("Prefabs")]
@@ -26,13 +26,24 @@ public class ShapeManager : MonoBehaviour
     [SerializeField] private float horizontalSpacing = 1.0f;
     [SerializeField] private float verticalSpacing = 0.866f;
 
-    [Header("Akıllı Spawn Ayarları")]
-    [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin altına düştüğünde yardım sistemi devreye girer.")]
-    [Range(0, 100)]
-    [SerializeField] private float helpPercentageThreshold = 40f;
+    // --- YENİ EKLENEN AYARLAR ---
+    [Header("Dinamik Zorluk Ayarları")]
+    [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin altına düştüğünde YARDIM sistemi devreye girer.")]
+    [Range(0f, 100f)]
+    [SerializeField] private float assistanceThreshold = 30f;
+
+    [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin üzerindeyken KÖSTEK sistemi devreye girebilir.")]
+    [Range(0f, 100f)]
+    [SerializeField] private float hindranceThreshold = 70f;
+
+    [Tooltip("Köstek sistemi koşulları sağlandığında, köstek olmanın gerçekleşme olasılığı (Yüzde).")]
+    [Range(0f, 100f)]
+    [SerializeField] private float hindranceChance = 50f;
     
     private LevelData_SO _currentLevelData;
     private int _shapesLeftInQueue;
+    
+    private enum SpawnMode { Assistance, Hindrance, Random }
 
     private void OnEnable()
     {
@@ -51,8 +62,7 @@ public class ShapeManager : MonoBehaviour
         
         foreach (var slot in queueSlots) { foreach (Transform child in slot) Destroy(child.gameObject); }
         
-        SpawnNewShapeBatch(false);
-        CheckForLoseCondition();
+        StartCoroutine(SpawnBatchWithDelay(0f));
     }
     
     public void RefreshShapeQueue()
@@ -64,7 +74,7 @@ public class ShapeManager : MonoBehaviour
         }
         StartCoroutine(SpawnBatchWithDelay(0f, true));
     }
-
+    
     private void HandleTurnCompleted()
     {
         _shapesLeftInQueue--;
@@ -75,42 +85,104 @@ public class ShapeManager : MonoBehaviour
         }
         else
         {
-            StartCoroutine(SpawnBatchWithDelay(0.1f, false));
+            StartCoroutine(SpawnBatchWithDelay(0.5f));
         }
     }
     
-    private IntelligentSpawn FindBestPossibleMove(List<ShapeData_SO> shapes)
+    private IEnumerator SpawnBatchWithDelay(float delay, bool forceAssistance = false)
     {
-        var allAvailableNodes = gridManager.GetGrid().Values.Where(n => n.IsAvailable).ToList();
+        yield return new WaitForSeconds(delay);
+        SpawnNewShapeBatch(forceAssistance);
+        CheckForLoseCondition();
+    }
     
-        if (allAvailableNodes.Count < 4)
+    private void SpawnNewShapeBatch(bool forceAssistance)
+    {
+        if (queueSlots.Length == 0) return;
+        _shapesLeftInQueue = queueSlots.Length;
+        
+        var availableShapes = GetAvailableShapesForCurrentLevel();
+        SpawnMode currentMode = DecideSpawnMode(forceAssistance);
+
+        switch (currentMode)
         {
-            shapes = shapes.Where(s => s.MarblePositions.Count <= allAvailableNodes.Count).ToList();
+            case SpawnMode.Assistance:
+                Debug.Log("<color=green>SPAWN MODU: Yardımcı</color>");
+                SpawnAssistanceBatch(availableShapes);
+                break;
+            case SpawnMode.Hindrance:
+                Debug.Log("<color=red>SPAWN MODU: Köstek</color>");
+                SpawnHindranceBatch(availableShapes);
+                break;
+            case SpawnMode.Random:
+                Debug.Log("<color=yellow>SPAWN MODU: Rastgele</color>");
+                SpawnRandomBatch(availableShapes);
+                break;
+        }
+    }
+
+    private SpawnMode DecideSpawnMode(bool forceAssistance)
+    {
+        if (forceAssistance) return SpawnMode.Assistance;
+
+        int totalNodes = gridManager.GetGrid().Count(n => !n.Value.IsLocked && n.Value.gameObject.activeSelf);
+        int availableNodeCount = gridManager.GetGrid().Values.Count(n => n.IsAvailable);
+        float availablePercentage = totalNodes > 0 ? ((float)availableNodeCount / totalNodes) * 100f : 0f;
+
+        if (availablePercentage <= assistanceThreshold)
+        {
+            return SpawnMode.Assistance;
         }
 
-        foreach (var shape in shapes.OrderBy(s => Random.value))
+        if (availablePercentage >= hindranceThreshold)
         {
-            foreach (var startNode in allAvailableNodes)
+            if (Random.Range(0f, 100f) <= hindranceChance)
             {
-                if(gridManager.CanShapeBePlacedAt(shape, startNode.GridPosition))
-                {
-                    var placementNodes = gridManager.GetPlacementNodes(shape, startNode.GridPosition);
-                    var neighborColors = gridManager.GetNeighboringColors(placementNodes);
-                    var bestColor = neighborColors.OrderByDescending(kvp => kvp.Value).FirstOrDefault();
-
-                    if (bestColor.Key != default(Color) && (bestColor.Value + shape.MarblePositions.Count) >= 5)
-                    {
-                        var overrides = new Dictionary<int, Color>();
-                        for(int i = 0; i < shape.MarblePositions.Count; i++)
-                        {
-                            overrides[i] = bestColor.Key;
-                        }
-                        return new IntelligentSpawn { ShapeData = shape, OverrideColor = bestColor.Key };
-                    }
-                }
+                return SpawnMode.Hindrance;
             }
         }
-        return new IntelligentSpawn { ShapeData = null, OverrideColor = null };
+        
+        return SpawnMode.Random;
+    }
+
+    private void SpawnAssistanceBatch(List<ShapeData_SO> availableShapes)
+    {
+        // Bir tane yardımcı, geri kalanı rastgele
+        IntelligentSpawn helpfulSpawn = FindBestPossibleMove(availableShapes);
+        
+        int helpfulSlotIndex = Random.Range(0, queueSlots.Length);
+
+        for (int i = 0; i < queueSlots.Length; i++)
+        {
+            if (i == helpfulSlotIndex && helpfulSpawn.ShapeData != null)
+            {
+                SpawnSingleShape(queueSlots[i], helpfulSpawn);
+            }
+            else
+            {
+                var randomShape = availableShapes[Random.Range(0, availableShapes.Count)];
+                SpawnSingleShape(queueSlots[i], new IntelligentSpawn { ShapeData = randomShape, OverrideColors = null });
+            }
+        }
+    }
+
+    private void SpawnHindranceBatch(List<ShapeData_SO> availableShapes)
+    {
+        // 3 tane köstek şekil bul ve spawn et
+        for (int i = 0; i < queueSlots.Length; i++)
+        {
+            IntelligentSpawn worstSpawn = FindWorstPossibleMove(availableShapes);
+            SpawnSingleShape(queueSlots[i], worstSpawn);
+        }
+    }
+    
+    private void SpawnRandomBatch(List<ShapeData_SO> availableShapes)
+    {
+        foreach (var slot in queueSlots)
+        {
+            var randomShape = availableShapes[Random.Range(0, availableShapes.Count)];
+            SpawnSingleShape(slot, new IntelligentSpawn { ShapeData = randomShape, OverrideColors = null });
+        }
     }
     
     private void SpawnSingleShape(Transform slot, IntelligentSpawn spawnInfo)
@@ -126,58 +198,118 @@ public class ShapeManager : MonoBehaviour
         Shape newShape = Instantiate(shapePrefab, slot);
         newShape.transform.localPosition = Vector3.zero;
         
-        newShape.Initialize(spawnInfo.ShapeData, _currentLevelData.AvailableColors, marblePrefab, horizontalSpacing, verticalSpacing, spawnInfo.OverrideColor);
+        newShape.Initialize(spawnInfo.ShapeData, _currentLevelData.AvailableColors, marblePrefab, horizontalSpacing, verticalSpacing, spawnInfo.OverrideColors);
     }
     
-    private void SpawnNewShapeBatch(bool forceHelp)
+
+    private IntelligentSpawn FindBestPossibleMove(List<ShapeData_SO> shapes)
     {
-        if (queueSlots.Length == 0) return;
-        _shapesLeftInQueue = queueSlots.Length;
-
-        var availableShapes = GetAvailableShapesForCurrentLevel();
-        int totalNodes = gridManager.GetGrid().Count(n => !n.Value.IsLocked);
-        int availableNodeCount = gridManager.GetGrid().Values.Count(n => n.IsAvailable);
-        float availablePercentage = totalNodes > 0 ? ((float)availableNodeCount / totalNodes) * 100f : 0f;
-
-        bool needsHelp = (availablePercentage <= helpPercentageThreshold) || forceHelp;
+        var allAvailableNodes = gridManager.GetGrid().Values.Where(n => n.IsAvailable).ToList();
         
-        IntelligentSpawn helpfulSpawn = new IntelligentSpawn { ShapeData = null, OverrideColor = null };
-        if (needsHelp)
+        if (allAvailableNodes.Count < 2)
         {
-            helpfulSpawn = FindBestPossibleMove(availableShapes);
+            shapes = shapes.Where(s => s.MarblePositions.Count <= allAvailableNodes.Count).ToList();
         }
 
-        List<Transform> slotsToFill = new List<Transform>(queueSlots);
-        
-        if (helpfulSpawn.ShapeData != null)
+        var possibleMoves = new List<(ShapeData_SO shape, Dictionary<Vector2Int, Color> colors)>();
+
+        foreach (var shape in shapes.OrderBy(s => Random.value))
         {
-            int randomIndex = Random.Range(0, slotsToFill.Count);
-            Transform helpfulSlot = slotsToFill[randomIndex];
-            slotsToFill.RemoveAt(randomIndex);
-            
-            SpawnSingleShape(helpfulSlot, helpfulSpawn);
-            Debug.Log("<color=green>SONUÇ: Bir adet yardımcı hamle bulundu ve slota yerleştirildi.</color>");
+            foreach (var startNode in allAvailableNodes)
+            {
+                var placementNodes = gridManager.GetPlacementNodes(shape, startNode.GridPosition);
+
+                if (placementNodes.Count == shape.MarblePositions.Count && placementNodes.All(n => n.IsAvailable))
+                {
+                    var neighborColors = gridManager.GetNeighboringColors(placementNodes);
+                    
+                    foreach (var colorKvp in neighborColors)
+                    {
+                        if (colorKvp.Value + shape.MarblePositions.Count >= 5)
+                        {
+                            var overrideColors = new Dictionary<Vector2Int, Color>();
+                            overrideColors[shape.MarblePositions[0]] = colorKvp.Key;
+                            
+                            return new IntelligentSpawn { ShapeData = shape, OverrideColors = overrideColors };
+                        }
+                    }
+                }
+            }
+        }
+        return new IntelligentSpawn { ShapeData = null, OverrideColors = null }; 
+    }
+    
+   private IntelligentSpawn FindWorstPossibleMove(List<ShapeData_SO> shapes)
+    {
+        var allAvailableNodes = gridManager.GetGrid().Values.Where(n => n.IsAvailable).ToList();
+        
+        var gridColorCounts = gridManager.GetGrid().Values
+            .Where(n => n.IsOccupied)
+            .GroupBy(n => n.PlacedMarble.MarbleColor)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var minorityColors = _currentLevelData.AvailableColors.Colors
+            .OrderBy(c => gridColorCounts.ContainsKey(c) ? gridColorCounts[c] : 0)
+            .ToList();
+
+        var possibleMoves = new List<(ShapeData_SO shape, Vector2Int anchor, Dictionary<Vector2Int, Color> assignedColors, int score)>();
+
+        var placeableShapes = shapes.Where(s => gridManager.CanShapeBePlacedAnywhere(s)).ToList();
+        if (!placeableShapes.Any()) placeableShapes.Add(allShapesInOrder[0]); 
+
+        foreach (var shape in placeableShapes.OrderByDescending(s => s.MarblePositions.Count)) 
+        {
+            foreach (var startNode in allAvailableNodes)
+            {
+                var placementNodes = gridManager.GetPlacementNodes(shape, startNode.GridPosition);
+
+                if (placementNodes.Count == shape.MarblePositions.Count && placementNodes.All(n => n.IsAvailable))
+                {
+                    int moveScore = 0;
+                    var assignedColors = new Dictionary<Vector2Int, Color>();
+                    var availableMinorityColors = new Queue<Color>(minorityColors);
+
+                    foreach (var node in placementNodes)
+                    {
+                        var neighbors = gridManager.GetNeighbors(node);
+                        var neighborGroups = neighbors
+                            .Where(n => n.IsOccupied && !placementNodes.Contains(n))
+                            .GroupBy(n => n.PlacedMarble.MarbleColor);
+                        
+                        var mostDangerousColorGroup = neighborGroups.OrderByDescending(g => g.Count()).FirstOrDefault();
+                        
+                        Color colorToAssign;
+                        if (mostDangerousColorGroup != null && mostDangerousColorGroup.Count() >= 2)
+                        {
+                            colorToAssign = availableMinorityColors.Dequeue();
+                            availableMinorityColors.Enqueue(colorToAssign); 
+                            moveScore += 5; 
+                        }
+                        else
+                        {
+                            colorToAssign = minorityColors[Random.Range(0, minorityColors.Count)];
+                            moveScore += 1;
+                        }
+                        
+                        var localPos = node.GridPosition - startNode.GridPosition;
+                        assignedColors[localPos] = colorToAssign;
+                    }
+                    possibleMoves.Add((shape, startNode.GridPosition, assignedColors, moveScore));
+                }
+            }
         }
 
-        foreach (var slot in slotsToFill)
+        if (possibleMoves.Any())
         {
-            var randomShape = availableShapes[Random.Range(0, availableShapes.Count)];
-            var randomSpawn = new IntelligentSpawn { ShapeData = randomShape, OverrideColor = null };
-            SpawnSingleShape(slot, randomSpawn);
+            // En yüksek "kötülük skoruna" sahip hamleyi seç
+            var worstMove = possibleMoves.OrderByDescending(m => m.score).First();
+            return new IntelligentSpawn { ShapeData = worstMove.shape, OverrideColors = worstMove.assignedColors };
         }
-        
-        if(helpfulSpawn.ShapeData == null)
-        {
-            Debug.Log("<color=yellow>SONUÇ: Yardım gerekmiyor veya bulunamadı, tüm slotlar rastgele dolduruldu.</color>");
-        }
+
+        // Hiçbir hamle bulunamazsa (çok nadir bir durum)
+        return new IntelligentSpawn { ShapeData = allShapesInOrder[0], OverrideColors = null };
     }
 
-    private IEnumerator SpawnBatchWithDelay(float delay, bool forceHelp)
-    {
-        yield return new WaitForSeconds(delay);
-        SpawnNewShapeBatch(forceHelp);
-        CheckForLoseCondition();
-    }
     
     private List<ShapeData_SO> GetAvailableShapesForCurrentLevel()
     {
