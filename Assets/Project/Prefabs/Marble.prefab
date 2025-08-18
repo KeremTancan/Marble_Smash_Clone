@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1826027816692510542}
   - component: {fileID: 1102591498955939507}
   - component: {fileID: -7941298574306738906}
+  - component: {fileID: -625503546722718940}
   m_Layer: 0
   m_Name: Marble
   m_TagString: Untagged
@@ -119,5 +120,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e75d058f33642fa42b7b0ed6616db63e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &-625503546722718940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8124537315900163787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 849780d558fcc5940943ab2335c07cbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

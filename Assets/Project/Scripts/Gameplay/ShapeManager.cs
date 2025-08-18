@@ -62,7 +62,7 @@ public class ShapeManager : MonoBehaviour
     {
         if (!ValidateSettings()) return;
         _currentLevelData = levelData;
-        _currentDisplayLevel = displayLevel; 
+        _currentDisplayLevel = displayLevel;
         
         foreach (var slot in queueSlots) { foreach (Transform child in slot) Destroy(child.gameObject); }
         
@@ -76,7 +76,7 @@ public class ShapeManager : MonoBehaviour
             foreach (Transform child in slot) Destroy(child.gameObject);
         }
         
-        StartCoroutine(SpawnBatchWithDelay(0f, true));
+        StartCoroutine(SpawnBatchWithDelay(0f));
     }
     
     private void HandleTurnCompleted()
@@ -172,10 +172,23 @@ public class ShapeManager : MonoBehaviour
 
     private void SpawnHindranceBatch(List<ShapeData_SO> availableShapes)
     {
+        var shapePool = new List<ShapeData_SO>(availableShapes);
+
         for (int i = 0; i < queueSlots.Length; i++)
         {
-            IntelligentSpawn worstSpawn = FindWorstPossibleMove(availableShapes);
+            if (!shapePool.Any())
+            {
+                SpawnSingleShape(queueSlots[i], new IntelligentSpawn { ShapeData = allShapesInOrder[0], OverrideColors = null });
+                continue;
+            }
+            
+            IntelligentSpawn worstSpawn = FindWorstPossibleMove(shapePool);
             SpawnSingleShape(queueSlots[i], worstSpawn);
+            
+            if (worstSpawn.ShapeData != null)
+            {
+                shapePool.Remove(worstSpawn.ShapeData);
+            }
         }
     }
     
