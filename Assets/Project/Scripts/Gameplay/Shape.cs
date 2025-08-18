@@ -135,7 +135,7 @@ public class Shape : MonoBehaviour
     
     #region Değişmeyen Kodlar
     public List<Marble> GetMarbles() => _marbles;
-    public void Initialize(ShapeData_SO shapeData, ColorPalette_SO colorPalette, GameObject marblePrefab, float hSpacing, float vSpacing, Dictionary<Vector2Int, Color> overrideColors)
+     public void Initialize(ShapeData_SO shapeData, ColorPalette_SO colorPalette, GameObject marblePrefab, float hSpacing, float vSpacing, Dictionary<Vector2Int, Color> overrideColors)
     {
         this.ShapeData = shapeData;
         _gridManager = FindObjectOfType<GridManager>();
@@ -146,20 +146,33 @@ public class Shape : MonoBehaviour
         _originalParent = transform.parent;
 
         var availableColors = colorPalette.Colors;
+        GameObject pivot = new GameObject("Pivot");
+        pivot.transform.SetParent(this.transform, false); 
+
+        Vector3 totalPosition = Vector3.zero;
+        List<Vector3> marbleWorldPositions = new List<Vector3>();
 
         foreach (var pos in shapeData.MarblePositions)
         {
             float worldX = pos.x * hSpacing + (pos.y % 2 != 0 ? hSpacing / 2f : 0);
             float worldY = pos.y * vSpacing;
+            Vector3 marblePos = new Vector3(worldX, worldY, 0);
             
-            GameObject marbleObj = Instantiate(marblePrefab, transform);
-            marbleObj.transform.localPosition = new Vector3(worldX, worldY, 0);
+            marbleWorldPositions.Add(marblePos);
+            totalPosition += marblePos;
+        }
+
+        Vector3 centerOffset = totalPosition / shapeData.MarblePositions.Count;
+        pivot.transform.localPosition = -centerOffset;
+        
+        for (int i = 0; i < shapeData.MarblePositions.Count; i++)
+        {
+            var pos = shapeData.MarblePositions[i];
+            GameObject marbleObj = Instantiate(marblePrefab, pivot.transform);
+            marbleObj.transform.localPosition = marbleWorldPositions[i];
             
             Marble newMarble = marbleObj.GetComponent<Marble>();
             
-            // YENİ MANTIK:
-            // Eğer bu merminin pozisyonu için özel bir renk belirtilmişse onu kullan,
-            // belirtilmemişse rastgele bir renk ata.
             if (overrideColors != null && overrideColors.TryGetValue(pos, out Color specificColor))
             {
                 newMarble.SetColor(specificColor);

@@ -7,7 +7,7 @@ public class ConnectionManager : MonoBehaviour
 {
     [Header("Referanslar")]
     [SerializeField] private GridManager gridManager;
-    [SerializeField] private ObjectPooler pipePooler; // Pipe prefab'ı yerine pooler referansı
+    [SerializeField] private ObjectPooler pipePooler; 
 
     private Dictionary<string, PipeConnector> _activePipes = new Dictionary<string, PipeConnector>();
 
@@ -25,7 +25,6 @@ public class ConnectionManager : MonoBehaviour
         {
             if (_activePipes.TryGetValue(key, out PipeConnector pipeToReturn))
             {
-                // Artık Destroy yerine havuza geri koyuyoruz
                 pipePooler.ReturnObjectToPool(pipeToReturn.gameObject);
             }
             _activePipes.Remove(key);
@@ -49,7 +48,6 @@ public class ConnectionManager : MonoBehaviour
     
     private void AnimatePipeConnection(GridNode from, GridNode to, string key)
     {
-        // Artık Instantiate yerine havuzdan çekiyoruz
         GameObject pipeObject = pipePooler.GetObjectFromPool();
         PipeConnector pipe = pipeObject.GetComponent<PipeConnector>();
 

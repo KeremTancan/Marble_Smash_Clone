@@ -36,8 +36,8 @@ public class GameManager : MonoBehaviour
     public void StartLevel()
     {
         LevelData_SO currentLevelData = levelManager.GetCurrentLevelData();
+        int displayLevel = levelManager.GetCurrentDisplayLevel();
 
-        // Kontrol listesine connectionManager'ı da ekledik
         if (gridManager == null || shapeManager == null || scoreManager == null || inputManager == null || connectionManager == null || currentLevelData == null)
         {
             Debug.LogError("GameManager'a gerekli yönetici veya seviye verisi atanmamış!");
@@ -50,8 +50,12 @@ public class GameManager : MonoBehaviour
         scoreManager.PrepareLevel(currentLevelData.ExplosionGoal);
         gridManager.GenerateGrid(currentLevelData);
         connectionManager.UpdateAllConnections();
-        shapeManager.PrepareInitialShapes(currentLevelData);
-        EventManager.RaiseOnLevelStarted(currentLevelData.LevelID);
+        
+        // DEĞİŞİKLİK: ShapeManager'a artık oyuncunun gördüğü seviye numarasını da gönderiyoruz.
+        // Bu, 50. seviyeden sonra tüm şekillerin açılması mantığını yönetmesini sağlayacak.
+        shapeManager.PrepareInitialShapes(currentLevelData, displayLevel);
+        
+        EventManager.RaiseOnLevelStarted(displayLevel);
     }
 
     private void HandleLevelComplete()

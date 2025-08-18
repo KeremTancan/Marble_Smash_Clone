@@ -1,15 +1,20 @@
 using UnityEditor;
 using UnityEngine;
 
-public class DeveloperTools
+public class DeveloperTools : Editor
 {
-    [MenuItem("Developer/Clear Player Prefs (Tüm Kayıtları Sil)")]
-    private static void ClearPlayerPrefs()
+    [MenuItem("Geliştirici/Oyuncu Verilerini Sil")]
+    public static void ClearPlayerData()
     {
-        // Cihaz hafızasındaki tüm kayıtlı verileri (seviye, para, güçlendirme hakları vb.) siler.
         PlayerPrefs.DeleteAll();
+        Debug.Log("<color=orange>Tüm oyuncu verileri (PlayerPrefs) temizlendi.</color>");
+    }
+
+    [MenuItem("Geliştirici/Seviyeyi 50 Yap")]
+    public static void SetLevelTo50()
+    {
+        PlayerPrefs.SetInt("PlayerDisplayLevel", 50);
         PlayerPrefs.Save();
-        
-        Debug.Log("GELİŞTİRİCİ MESAJI: Tüm PlayerPrefs verileri (kayıtlar) başarıyla silindi!");
+        Debug.Log("<color=cyan>Oyuncu seviyesi 50 olarak ayarlandı. Oyunu başlatın.</color>");
     }
 }

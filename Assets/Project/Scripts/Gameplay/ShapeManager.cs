@@ -27,7 +27,7 @@ public class ShapeManager : MonoBehaviour
     [SerializeField] private float verticalSpacing = 0.866f;
 
     [Header("Dinamik Zorluk Ayarları")]
-    [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin altına düştüğünde YARDIM sistemi devreye girer.")]
+    [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin altına düştüğünde YARDIM sistemi devreye girebilir.")]
     [Range(0f, 100f)]
     [SerializeField] private float assistanceThreshold = 30f;
     
@@ -45,6 +45,7 @@ public class ShapeManager : MonoBehaviour
     
     private LevelData_SO _currentLevelData;
     private int _shapesLeftInQueue;
+    private int _currentDisplayLevel; 
     
     private enum SpawnMode { Assistance, Hindrance, Random }
 
@@ -57,17 +58,16 @@ public class ShapeManager : MonoBehaviour
     {
         EventManager.OnTurnCompleted -= HandleTurnCompleted;
     }
-    
-    public void PrepareInitialShapes(LevelData_SO levelData)
+    public void PrepareInitialShapes(LevelData_SO levelData, int displayLevel)
     {
         if (!ValidateSettings()) return;
         _currentLevelData = levelData;
+        _currentDisplayLevel = displayLevel; 
         
         foreach (var slot in queueSlots) { foreach (Transform child in slot) Destroy(child.gameObject); }
         
         StartCoroutine(SpawnBatchWithDelay(0f));
     }
-    
     public void RefreshShapeQueue()
     {
         if (!gameObject.activeInHierarchy) return;
@@ -76,7 +76,6 @@ public class ShapeManager : MonoBehaviour
             foreach (Transform child in slot) Destroy(child.gameObject);
         }
         
-        // DEĞİŞİKLİK: 'forceAssistance' true olarak ayarlandı ve fail kontrolü artık coroutine içinde.
         StartCoroutine(SpawnBatchWithDelay(0f, true));
     }
     
@@ -96,7 +95,7 @@ public class ShapeManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
         SpawnNewShapeBatch(forceAssistance);
         
-        yield return null;
+        yield return null; 
         CheckForLoseCondition();
     }
     
@@ -140,8 +139,7 @@ public class ShapeManager : MonoBehaviour
                 return SpawnMode.Assistance;
             }
         }
-
-        if (availablePercentage >= hindranceThreshold)
+        if (_currentDisplayLevel > 10 && availablePercentage >= hindranceThreshold)
         {
             if (Random.Range(0f, 100f) <= hindranceChance)
             {
@@ -314,13 +312,19 @@ public class ShapeManager : MonoBehaviour
     
     private List<ShapeData_SO> GetAvailableShapesForCurrentLevel()
     {
-        int levelId = _currentLevelData.LevelID;
         int shapeCountToUse;
 
-        if (levelId <= 10) shapeCountToUse = 4;
-        else if (levelId <= 20) shapeCountToUse = 7;
-        else if (levelId <= 30) shapeCountToUse = 10;
-        else shapeCountToUse = allShapesInOrder.Count;
+        if (_currentDisplayLevel > 40) 
+        {
+            shapeCountToUse = allShapesInOrder.Count;
+        }
+        else if (_currentDisplayLevel <= 10) shapeCountToUse = 4;
+        else if (_currentDisplayLevel <= 20) shapeCountToUse = 7;
+        else if (_currentDisplayLevel <= 30) shapeCountToUse = 10;
+        else 
+        {
+            shapeCountToUse = allShapesInOrder.Count;
+        }
 
         shapeCountToUse = Mathf.Min(shapeCountToUse, allShapesInOrder.Count);
         return allShapesInOrder.GetRange(0, shapeCountToUse);
