@@ -14,7 +14,6 @@ public class GridManager : MonoBehaviour
 
     [Header("Yöneticiler")] [SerializeField]
     private ConnectionManager connectionManager;
-    [SerializeField] private FXManager fxManager;
 
     [Header("Güvenli Alan Ayarları")] [SerializeField]
     private Rect safeArea = new Rect(-4f, -4f, 8f, 8f);
@@ -84,14 +83,8 @@ public class GridManager : MonoBehaviour
     {
         if (marble == null || marble.ParentNode == null || !marble.ParentNode.IsOccupied) return;
 
-        GridNode node = marble.ParentNode;
-
-        if (fxManager != null)
-        {
-            fxManager.PlayExplosionEffect(node.transform.position, marble.MarbleColor);
-        }
         EventManager.RaiseOnMarblesExploded(1);
-
+        GridNode node = marble.ParentNode;
         Destroy(marble.gameObject);
         node.SetVacant();
         connectionManager.UpdateAllConnections();
@@ -212,14 +205,10 @@ public class GridManager : MonoBehaviour
             marbleToMove.transform.SetParent(this.transform, true);
             destinationNode.SetOccupied(marbleToMove);
             placedNodes.Add(destinationNode);
-            
-            var juiceController = marbleToMove.GetComponent<JuiceController>();
-            if (juiceController != null)
-            {
-                juiceController.PlayPlacementAnimation(0.8f, 0.25f);
-            }
         }
+
         Destroy(shape.gameObject);
+
         connectionManager.UpdateAllConnections();
         StartCoroutine(ProcessMatchesAfterPlacement(placedNodes));
     }
@@ -237,7 +226,7 @@ public class GridManager : MonoBehaviour
                 continue;
 
             List<GridNode> connectedGroup = FindConnectedGroup(startNode);
-            
+
             if (connectedGroup.Count >= 5)
             {
                 explosionOccurred = true;
@@ -247,46 +236,25 @@ public class GridManager : MonoBehaviour
                 }
             }
         }
-        
+
         if (explosionOccurred)
         {
             EventManager.RaiseOnMarblesExploded(allNodesToExplode.Count);
-            yield return StartCoroutine(PlayExplosionAnimations(allNodesToExplode));
+
+            foreach (GridNode node in allNodesToExplode)
+            {
+                if (node.PlacedMarble != null)
+                {
+                    Destroy(node.PlacedMarble.gameObject);
+                    node.SetVacant();
+                }
+            }
+
             Debug.Log(allNodesToExplode.Count + " adet top patlatıldı!");
             connectionManager.UpdateAllConnections();
         }
-        else
-        {
-            EventManager.RaiseOnTurnWithoutExplosion();
-        }
-        
+
         EventManager.RaiseOnTurnCompleted();
-    }
-    
-    private IEnumerator PlayExplosionAnimations(HashSet<GridNode> nodesToExplode)
-    {
-        int animationsPending = nodesToExplode.Count;
-
-        foreach (GridNode node in nodesToExplode)
-        {
-            if (node.PlacedMarble != null)
-            {
-                Marble marble = node.PlacedMarble;
-                GridNode capturedNode = node; 
-
-                marble.PlayExplosionAnimation(() => {
-                    fxManager.PlayExplosionEffect(capturedNode.transform.position, marble.MarbleColor);
-                    Destroy(marble.gameObject);
-                    capturedNode.SetVacant();
-                    animationsPending--; 
-                });
-            }
-            else
-            {
-                animationsPending--;
-            }
-        }
-        yield return new WaitUntil(() => animationsPending == 0);
     }
 
     private List<GridNode> FindConnectedGroup(GridNode startNode)

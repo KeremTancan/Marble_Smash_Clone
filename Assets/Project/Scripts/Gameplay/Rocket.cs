@@ -6,7 +6,6 @@ public class Rocket : MonoBehaviour
     private Vector3 _direction;
     private float _lifeTime = 1f;
     private GridManager _gridManager; 
-    [SerializeField] private FXManager fxManager;
 
     public void Launch(Vector3 direction, GridManager gridManager)
     {
@@ -30,7 +29,6 @@ public class Rocket : MonoBehaviour
             if (_gridManager != null)
             {
                 _gridManager.ExplodeMarble(marble);
-                fxManager.PlayExplosionEffect(marble.transform.position,marble.MarbleColor);
             }
         }
     }

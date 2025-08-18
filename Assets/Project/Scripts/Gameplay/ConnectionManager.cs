@@ -1,3 +1,4 @@
+// ConnectionManager.cs'in GÜNCELLENMİŞ hali (tamamı)
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -9,7 +10,6 @@ public class ConnectionManager : MonoBehaviour
     [SerializeField] private ObjectPooler pipePooler; 
 
     private Dictionary<string, PipeConnector> _activePipes = new Dictionary<string, PipeConnector>();
-    private HashSet<GridNode> _animatedNodesThisFrame = new HashSet<GridNode>();
 
     public void UpdateAllConnections()
     {
@@ -18,7 +18,6 @@ public class ConnectionManager : MonoBehaviour
         var grid = gridManager.GetGrid();
         if (grid == null) return;
         
-        _animatedNodesThisFrame.Clear();
         HashSet<string> requiredConnections = FindAllRequiredConnections(grid);
         
         var keysToRemove = _activePipes.Keys.Except(requiredConnections).ToList();
@@ -55,24 +54,6 @@ public class ConnectionManager : MonoBehaviour
         pipe.gameObject.name = $"PipeConn_{key}";
         pipe.AnimateConnection(from.transform.position, to.transform.position, from.PlacedMarble.MarbleColor);
         _activePipes.Add(key, pipe);
-
-        TriggerConnectionJuice(from);
-        TriggerConnectionJuice(to);
-    }
-    private void TriggerConnectionJuice(GridNode node)
-    {
-        if (_animatedNodesThisFrame.Contains(node)) return;
-        
-        if (node.PlacedMarble != null)
-        {
-            var juiceController = node.PlacedMarble.GetComponent<JuiceController>();
-            if (juiceController != null)
-            {
-                juiceController.PlayGrowAndShrink(1.2f, 0.2f, null);
-                
-                _animatedNodesThisFrame.Add(node);
-            }
-        }
     }
 
     #region Değişmeyen Kodlar
