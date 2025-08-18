@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+
 public struct IntelligentSpawn
 {
     public ShapeData_SO ShapeData;
@@ -29,15 +30,18 @@ public class ShapeManager : MonoBehaviour
     [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin altına düştüğünde YARDIM sistemi devreye girer.")]
     [Range(0f, 100f)]
     [SerializeField] private float assistanceThreshold = 30f;
+    
+    [Tooltip("Yardım sistemi koşulları sağlandığında, yardım etmenin gerçekleşme olasılığı (Yüzde).")]
+    [Range(0f, 100f)]
+    [SerializeField] private float assistanceChance = 50f;
 
     [Tooltip("Izgaradaki boş nokta yüzdesi bu değerin üzerindeyken KÖSTEK sistemi devreye girebilir.")]
     [Range(0f, 100f)]
     [SerializeField] private float hindranceThreshold = 70f;
-
+    
+    [Tooltip("Köstek sistemi koşulları sağlandığında, köstek olmanın gerçekleşme olasılığı (Yüzde).")]
     [Range(0f, 100f)]
     [SerializeField] private float hindranceChance = 50f;
-    [Range(0f, 100f)]
-    [SerializeField] private float assistanceChance = 50f;
     
     private LevelData_SO _currentLevelData;
     private int _shapesLeftInQueue;
@@ -71,27 +75,29 @@ public class ShapeManager : MonoBehaviour
         {
             foreach (Transform child in slot) Destroy(child.gameObject);
         }
+        
+        // DEĞİŞİKLİK: 'forceAssistance' true olarak ayarlandı ve fail kontrolü artık coroutine içinde.
         StartCoroutine(SpawnBatchWithDelay(0f, true));
     }
     
     private void HandleTurnCompleted()
     {
         _shapesLeftInQueue--;
+        CheckForLoseCondition();
 
-        if (_shapesLeftInQueue > 0)
-        {
-            CheckForLoseCondition();
-        }
-        else
+        if (_shapesLeftInQueue <= 0)
         {
             StartCoroutine(SpawnBatchWithDelay(0.5f));
         }
     }
+    
     private IEnumerator SpawnBatchWithDelay(float delay, bool forceAssistance = false)
     {
         yield return new WaitForSeconds(delay);
         SpawnNewShapeBatch(forceAssistance);
         
+        yield return null;
+        CheckForLoseCondition();
     }
     
     private void SpawnNewShapeBatch(bool forceAssistance)
@@ -148,7 +154,6 @@ public class ShapeManager : MonoBehaviour
 
     private void SpawnAssistanceBatch(List<ShapeData_SO> availableShapes)
     {
-        // Bir tane yardımcı, geri kalanı rastgele
         IntelligentSpawn helpfulSpawn = FindBestPossibleMove(availableShapes);
         
         int helpfulSlotIndex = Random.Range(0, queueSlots.Length);
@@ -169,7 +174,6 @@ public class ShapeManager : MonoBehaviour
 
     private void SpawnHindranceBatch(List<ShapeData_SO> availableShapes)
     {
-        // 3 tane köstek şekil bul ve spawn et
         for (int i = 0; i < queueSlots.Length; i++)
         {
             IntelligentSpawn worstSpawn = FindWorstPossibleMove(availableShapes);
@@ -211,8 +215,6 @@ public class ShapeManager : MonoBehaviour
         {
             shapes = shapes.Where(s => s.MarblePositions.Count <= allAvailableNodes.Count).ToList();
         }
-
-        var possibleMoves = new List<(ShapeData_SO shape, Dictionary<Vector2Int, Color> colors)>();
 
         foreach (var shape in shapes.OrderBy(s => Random.value))
         {
@@ -302,12 +304,10 @@ public class ShapeManager : MonoBehaviour
 
         if (possibleMoves.Any())
         {
-            // En yüksek "kötülük skoruna" sahip hamleyi seç
             var worstMove = possibleMoves.OrderByDescending(m => m.score).First();
             return new IntelligentSpawn { ShapeData = worstMove.shape, OverrideColors = worstMove.assignedColors };
         }
 
-        // Hiçbir hamle bulunamazsa (çok nadir bir durum)
         return new IntelligentSpawn { ShapeData = allShapesInOrder[0], OverrideColors = null };
     }
 
@@ -349,6 +349,7 @@ public class ShapeManager : MonoBehaviour
 
         if (!canAnyShapeBePlaced)
         {
+            Debug.Log("<color=orange>LOSE KONTROLÜ: Yerleştirilecek uygun yer bulunamadı. Oyun Bitti.</color>");
             EventManager.RaiseOnLevelFailed();
         }
     }
