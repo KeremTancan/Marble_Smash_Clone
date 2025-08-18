@@ -152,7 +152,13 @@ public class ShapeManager : MonoBehaviour
 
     private void SpawnAssistanceBatch(List<ShapeData_SO> availableShapes)
     {
-        IntelligentSpawn helpfulSpawn = FindBestPossibleMove(availableShapes);
+        var shapePool = new List<ShapeData_SO>(availableShapes);
+        IntelligentSpawn helpfulSpawn = FindBestPossibleMove(shapePool);
+        
+        if (helpfulSpawn.ShapeData != null)
+        {
+            shapePool.Remove(helpfulSpawn.ShapeData);
+        }
         
         int helpfulSlotIndex = Random.Range(0, queueSlots.Length);
 
@@ -164,8 +170,18 @@ public class ShapeManager : MonoBehaviour
             }
             else
             {
-                var randomShape = availableShapes[Random.Range(0, availableShapes.Count)];
-                SpawnSingleShape(queueSlots[i], new IntelligentSpawn { ShapeData = randomShape, OverrideColors = null });
+                if (shapePool.Any())
+                {
+                    int randomIndex = Random.Range(0, shapePool.Count);
+                    var randomShape = shapePool[randomIndex];
+                    SpawnSingleShape(queueSlots[i], new IntelligentSpawn { ShapeData = randomShape, OverrideColors = null });
+                    
+                    shapePool.RemoveAt(randomIndex);
+                }
+                else
+                {
+                    SpawnSingleShape(queueSlots[i], new IntelligentSpawn { ShapeData = allShapesInOrder[0], OverrideColors = null });
+                }
             }
         }
     }

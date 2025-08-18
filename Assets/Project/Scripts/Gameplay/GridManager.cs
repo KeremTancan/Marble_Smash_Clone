@@ -216,7 +216,7 @@ public class GridManager : MonoBehaviour
             var juiceController = marbleToMove.GetComponent<JuiceController>();
             if (juiceController != null)
             {
-                juiceController.PlayPlacementAnimation(0.8f, 0.25f);
+                juiceController.PlayPlacementAnimation(0.9f, 0.2f);
             }
         }
         Destroy(shape.gameObject);
