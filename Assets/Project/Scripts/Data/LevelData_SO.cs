@@ -22,9 +22,6 @@ public class LevelData_SO : ScriptableObject
     [Header("Oyun Kuralları")]
     public int ExplosionGoal = 20;
 
-    [Tooltip("Bu listenin BOYUTU, ShapeManager'daki ana listeden kaç tane şeklin (en baştan başlayarak) kullanılabileceğini belirler. İçeriği önemli değil, sadece sayısı kullanılır.")]
-    public List<ShapeData_SO> AllowedShapes;
-
     public ColorPalette_SO AvailableColors;
     
     [Header("Ödüller")]

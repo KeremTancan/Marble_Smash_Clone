@@ -3,10 +3,14 @@ using UnityEngine;
 
 public class GhostController : MonoBehaviour
 {
+    [SerializeField] private Material sharedGhostMaterial;
     private List<GameObject> _ghostParts = new List<GameObject>();
+    private MaterialPropertyBlock _propertyBlock;
 
     public void Initialize(Shape shapeToCopy)
     {
+        _propertyBlock = new MaterialPropertyBlock();
+
         foreach (Transform child in transform) Destroy(child.gameObject);
         _ghostParts.Clear();
 
@@ -18,22 +22,12 @@ public class GhostController : MonoBehaviour
             MeshRenderer renderer = ghostPart.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                Material materialInstance = new Material(renderer.material);
-                
-                materialInstance.SetFloat("_Surface", 1.0f); // Yüzey Tipi -> Transparent
-                materialInstance.SetFloat("_Blend", 0.0f);   // Karıştırma Modu -> Alpha
-                materialInstance.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                materialInstance.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                materialInstance.SetInt("_ZWrite", 0);
-                materialInstance.DisableKeyword("_ALPHATEST_ON");
-                materialInstance.EnableKeyword("_ALPHABLEND_ON");
-                materialInstance.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                materialInstance.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
-                
+                renderer.material = sharedGhostMaterial;
                 Color originalColor = originalMarble.MarbleColor;
-                float desiredAlpha = 120f / 255f;
-                materialInstance.color = new Color(originalColor.r, originalColor.g, originalColor.b, desiredAlpha); 
-                renderer.material = materialInstance;
+                float desiredAlpha = 150f / 255f;
+                Color finalColor = new Color(originalColor.r, originalColor.g, originalColor.b, desiredAlpha);
+                _propertyBlock.SetColor("_BaseColor", finalColor);
+                renderer.SetPropertyBlock(_propertyBlock);
             }
             _ghostParts.Add(ghostPart);
         }

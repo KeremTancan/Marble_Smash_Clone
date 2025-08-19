@@ -46,6 +46,7 @@ public class ShapeManager : MonoBehaviour
     private LevelData_SO _currentLevelData;
     private int _shapesLeftInQueue;
     private int _currentDisplayLevel; 
+    private readonly List<GridNode> _reusableNeighborList = new List<GridNode>(6);
     
     private enum SpawnMode { Assistance, Hindrance, Random }
 
@@ -301,8 +302,9 @@ public class ShapeManager : MonoBehaviour
 
                     foreach (var node in placementNodes)
                     {
-                        var neighbors = gridManager.GetNeighbors(node);
-                        var neighborGroups = neighbors
+                        // DEĞİŞİKLİK: Yeni GetNeighbors metodunu kullan
+                        gridManager.GetNeighbors(node, _reusableNeighborList);
+                        var neighborGroups = _reusableNeighborList
                             .Where(n => n.IsOccupied && !placementNodes.Contains(n))
                             .GroupBy(n => n.PlacedMarble.MarbleColor);
                         

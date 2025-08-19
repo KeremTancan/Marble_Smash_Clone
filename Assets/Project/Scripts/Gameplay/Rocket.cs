@@ -14,12 +14,17 @@ public class Rocket : MonoBehaviour
         _gridManager = gridManager;
         transform.rotation = Quaternion.LookRotation(Vector3.forward, _direction); 
         
-        Destroy(gameObject, _lifeTime);
+        StartCoroutine(ReturnToPoolAfterTime(_lifeTime));
     }
 
     void Update()
     {
         transform.position += _direction * _speed * Time.deltaTime;
+    }
+    private System.Collections.IEnumerator ReturnToPoolAfterTime(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        RocketPoolManager.Instance.ReturnRocket(this);
     }
 
     private void OnTriggerEnter(Collider other)

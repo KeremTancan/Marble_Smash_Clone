@@ -8,8 +8,6 @@ public class Shape : MonoBehaviour
     [SerializeField] private float pickupScale = 1.2f;
     [SerializeField] private float scaleDuration = 0.1f;
     [SerializeField] private Vector3 pickupOffset = new Vector3(0, 0.5f, 0);
-    [SerializeField] private GhostController ghostPrefab;
-
     public ShapeData_SO ShapeData { get; private set; }
     public bool IsPlaced { get; private set; }
     public Transform OriginalParent { get; private set; }
@@ -18,15 +16,11 @@ public class Shape : MonoBehaviour
     private Vector3 _originalPosition;
     private Vector3 _originalScale;
     private GridManager _gridManager;
-    private GhostController _ghostInstance;
+    private GhostController _activeGhost; 
     private Coroutine _activeCoroutine;
     private Dictionary<Marble, GridNode> _lastValidPlacement;
     private List<GridNode> _lastMarkedNodes = new List<GridNode>();
-
     private GridNode _lastClosestNode = null;
-    private GhostController _ghostController;
-    private Vector3 _originalQueuePosition;
-    private Transform _originalParent;
 
     private void Awake()
     {
@@ -55,20 +49,20 @@ public class Shape : MonoBehaviour
             
             if (isValid)
             {
-                _ghostInstance.gameObject.SetActive(true);
-                _ghostInstance.UpdatePositions(targetPlacement);
+                _activeGhost.gameObject.SetActive(true);
+                _activeGhost.UpdatePositions(targetPlacement);
                 _lastValidPlacement = targetPlacement;
             }
             else
             {
-                _ghostInstance.gameObject.SetActive(false);
+                _activeGhost.gameObject.SetActive(false);
                 MarkNodes(targetPlacement.Values, Color.red);
                 _lastValidPlacement = null;
             }
         }
         else
         {
-            _ghostInstance.gameObject.SetActive(false);
+            _activeGhost.gameObject.SetActive(false);
             _lastValidPlacement = null;
         }
     }
@@ -78,14 +72,12 @@ public class Shape : MonoBehaviour
         _originalPosition = transform.position;
         OriginalParent = transform.parent;
         
-        if (_ghostInstance == null)
-        {
-            _ghostInstance = Instantiate(ghostPrefab);
-            _ghostInstance.Initialize(this);
-        }
-        _ghostInstance.gameObject.SetActive(false);
+        _activeGhost = GhostPoolManager.Instance.GetGhost();
+        _activeGhost.Initialize(this);
+        
+        _activeGhost.gameObject.SetActive(false);
         ResetMarkedNodes();
-        _lastClosestNode = null; // Seçimi sıfırla
+        _lastClosestNode = null; 
 
         RunCoroutine(PickupRoutine());
     }
@@ -93,37 +85,56 @@ public class Shape : MonoBehaviour
     public void OnDropped()
     {
         ResetMarkedNodes();
-        if (_ghostInstance != null)
-        {
-            _ghostInstance.gameObject.SetActive(false);
-        }
-
+        
         if (_lastValidPlacement != null)
         {
             _gridManager.PlaceShape(this, _lastValidPlacement);
             IsPlaced = true;
             this.enabled = false;
-            Destroy(_ghostInstance.gameObject);
+            GhostPoolManager.Instance.ReturnGhost(_activeGhost);
         }
         else
         {
             RunCoroutine(ReturnRoutine());
         }
-        _lastClosestNode = null; // Bırakmayı sıfırla
+        _lastClosestNode = null;
     }
     
+    private IEnumerator ReturnRoutine()
+    {
+        if (_activeGhost != null)
+        {
+            GhostPoolManager.Instance.ReturnGhost(_activeGhost);
+            _activeGhost = null;
+        }
+
+        Vector3 startPos = transform.position;
+        Vector3 startScale = transform.localScale;
+        float timer = 0f;
+        while (timer < scaleDuration){
+            float t = timer / scaleDuration;
+            transform.position = Vector3.Lerp(startPos, _originalPosition, t);
+            transform.localScale = Vector3.Lerp(startScale, _originalScale, t);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = _originalPosition;
+        transform.localScale = _originalScale;
+        transform.SetParent(OriginalParent);
+    }
+    
+    #region Değişmeyen Kodlar
     private void MarkNodes(IEnumerable<GridNode> nodes, Color color)
     {
         foreach (var node in nodes)
         {
-            if(node != null) // Güvenlik kontrolü
+            if(node != null) 
             {
                 node.SetHighlightColor(color);
                 _lastMarkedNodes.Add(node);
             }
         }
     }
-
     private void ResetMarkedNodes()
     {
         foreach (var node in _lastMarkedNodes)
@@ -132,18 +143,13 @@ public class Shape : MonoBehaviour
         }
         _lastMarkedNodes.Clear();
     }
-    
-    #region Değişmeyen Kodlar
     public List<Marble> GetMarbles() => _marbles;
-     public void Initialize(ShapeData_SO shapeData, ColorPalette_SO colorPalette, GameObject marblePrefab, float hSpacing, float vSpacing, Dictionary<Vector2Int, Color> overrideColors)
+    public void Initialize(ShapeData_SO shapeData, ColorPalette_SO colorPalette, GameObject marblePrefab, float hSpacing, float vSpacing, Dictionary<Vector2Int, Color> overrideColors)
     {
         this.ShapeData = shapeData;
         _gridManager = FindObjectOfType<GridManager>();
-        _ghostController = FindObjectOfType<GhostController>();
 
         _originalScale = transform.localScale;
-        _originalQueuePosition = transform.position;
-        _originalParent = transform.parent;
 
         var availableColors = colorPalette.Colors;
         GameObject pivot = new GameObject("Pivot");
@@ -204,21 +210,6 @@ public class Shape : MonoBehaviour
         }
         transform.position = targetPos;
         transform.localScale = targetScale;
-    }
-    private IEnumerator ReturnRoutine(){
-        Vector3 startPos = transform.position;
-        Vector3 startScale = transform.localScale;
-        float timer = 0f;
-        while (timer < scaleDuration){
-            float t = timer / scaleDuration;
-            transform.position = Vector3.Lerp(startPos, _originalPosition, t);
-            transform.localScale = Vector3.Lerp(startScale, _originalScale, t);
-            timer += Time.deltaTime;
-            yield return null;
-        }
-        transform.position = _originalPosition;
-        transform.localScale = _originalScale;
-        transform.SetParent(OriginalParent);
     }
     #endregion
 }

@@ -8,9 +8,6 @@ public class LevelManager : MonoBehaviour
 
     [SerializeField] private int loopStartLevel = 15;
 
-    private int _currentLevelIndex;
-    private const string LEVEL_INDEX_KEY = "PlayerLevel";
-
     private int _displayLevel;
     private const string DISPLAY_LEVEL_KEY = "PlayerDisplayLevel";
 

@@ -10,7 +10,43 @@ public class ConnectionManager : MonoBehaviour
 
     private Dictionary<string, PipeConnector> _activePipes = new Dictionary<string, PipeConnector>();
     private HashSet<GridNode> _animatedNodesThisFrame = new HashSet<GridNode>();
+    private readonly List<GridNode> _reusableNeighborList = new List<GridNode>(6);
+    private HashSet<string> FindAllRequiredConnections(Dictionary<Vector2Int, GridNode> grid)
+    {
+        var requiredKeys = new HashSet<string>();
+        var visitedNodes = new HashSet<GridNode>();
 
+        foreach (var node in grid.Values)
+        {
+            if (node.IsOccupied && !visitedNodes.Contains(node))
+            {
+                Stack<GridNode> stack = new Stack<GridNode>();
+                stack.Push(node);
+                visitedNodes.Add(node);
+
+                while (stack.Count > 0)
+                {
+                    var currentNode = stack.Pop();
+                    
+                    gridManager.GetNeighbors(currentNode, _reusableNeighborList);
+                    foreach (var neighbor in _reusableNeighborList)
+                    {
+                        if (neighbor.IsOccupied && 
+                            !visitedNodes.Contains(neighbor) && 
+                            neighbor.PlacedMarble.MarbleColor == currentNode.PlacedMarble.MarbleColor)
+                        {
+                            visitedNodes.Add(neighbor);
+                            stack.Push(neighbor);
+                            requiredKeys.Add(GetConnectionKey(currentNode, neighbor));
+                        }
+                    }
+                }
+            }
+        }
+        return requiredKeys;
+    }
+    
+    #region Değişmeyen Kodlar
     public void UpdateAllConnections()
     {
         if (gridManager == null || pipePooler == null) return;
@@ -46,7 +82,6 @@ public class ConnectionManager : MonoBehaviour
             }
         }
     }
-    
     private void AnimatePipeConnection(GridNode from, GridNode to, string key)
     {
         GameObject pipeObject = pipePooler.GetObjectFromPool();
@@ -73,40 +108,6 @@ public class ConnectionManager : MonoBehaviour
                 _animatedNodesThisFrame.Add(node);
             }
         }
-    }
-
-    #region Değişmeyen Kodlar
-    private HashSet<string> FindAllRequiredConnections(Dictionary<Vector2Int, GridNode> grid)
-    {
-        var requiredKeys = new HashSet<string>();
-        var visitedNodes = new HashSet<GridNode>();
-
-        foreach (var node in grid.Values)
-        {
-            if (node.IsOccupied && !visitedNodes.Contains(node))
-            {
-                Stack<GridNode> stack = new Stack<GridNode>();
-                stack.Push(node);
-                visitedNodes.Add(node);
-
-                while (stack.Count > 0)
-                {
-                    var currentNode = stack.Pop();
-                    foreach (var neighbor in gridManager.GetNeighbors(currentNode))
-                    {
-                        if (neighbor.IsOccupied && 
-                            !visitedNodes.Contains(neighbor) && 
-                            neighbor.PlacedMarble.MarbleColor == currentNode.PlacedMarble.MarbleColor)
-                        {
-                            visitedNodes.Add(neighbor);
-                            stack.Push(neighbor);
-                            requiredKeys.Add(GetConnectionKey(currentNode, neighbor));
-                        }
-                    }
-                }
-            }
-        }
-        return requiredKeys;
     }
     private string GetConnectionKey(GridNode nodeA, GridNode nodeB)
     {

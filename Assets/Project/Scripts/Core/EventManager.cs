@@ -12,7 +12,6 @@ public static class EventManager
     public static event Action<int> OnLevelStarted; 
     public static event Action<string, int> OnPowerUpCountChanged;
     public static event Action<int> OnRewardCollected;
-    public static event Action OnTurnWithoutExplosion;
     public static void RaiseOnRewardCollected(int rewardAmount) { OnRewardCollected?.Invoke(rewardAmount); }
     public static void RaiseOnCurrencyUpdated(int newAmount) { OnCurrencyUpdated?.Invoke(newAmount); }
     public static void RaiseOnTurnCompleted() { OnTurnCompleted?.Invoke(); }
@@ -23,5 +22,4 @@ public static class EventManager
     public static void RaiseOnFireworkModeChanged(bool isActive) {OnFireworkModeChanged?.Invoke(isActive); }
     public static void RaiseOnLevelStarted(int levelID) { OnLevelStarted?.Invoke(levelID); }
     public static void RaiseOnPowerUpCountChanged(string powerUpID, int newCount) { OnPowerUpCountChanged?.Invoke(powerUpID, newCount); }
-    public static void RaiseOnTurnWithoutExplosion() { OnTurnWithoutExplosion?.Invoke(); }
 }
