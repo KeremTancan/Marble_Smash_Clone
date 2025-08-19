@@ -30,7 +30,7 @@ public class Marble : MonoBehaviour
     {
         if (_juiceController != null)
         {
-            _juiceController.PlayGrowAndShrink(1.5f, 0.15f, onAnimationComplete);
+            _juiceController.PlayPreExplosionAnimation(1.5f, 0.3f, onAnimationComplete);
         }
         else
         {

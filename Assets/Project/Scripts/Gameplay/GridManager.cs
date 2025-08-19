@@ -216,18 +216,23 @@ public class GridManager : MonoBehaviour
             var juiceController = marbleToMove.GetComponent<JuiceController>();
             if (juiceController != null)
             {
-                juiceController.PlayPlacementAnimation(0.9f, 0.2f);
+                juiceController.PlayPlacementAnimation();
             }
         }
         Destroy(shape.gameObject);
+        StartCoroutine(ProcessPlacementSequence(placedNodes));
+    }
+    
+    private IEnumerator ProcessPlacementSequence(List<GridNode> placedNodes)
+    {
+        yield return new WaitForSeconds(0.2f);
         connectionManager.UpdateAllConnections();
-        StartCoroutine(ProcessMatchesAfterPlacement(placedNodes));
+        yield return StartCoroutine(ProcessMatchesAfterPlacement(placedNodes));
     }
 
-    private IEnumerator ProcessMatchesAfterPlacement(List<GridNode> placedNodes, float delay = 0.25f)
-    {
-        yield return new WaitForSeconds(delay);
 
+    private IEnumerator ProcessMatchesAfterPlacement(List<GridNode> placedNodes)
+    {
         HashSet<GridNode> allNodesToExplode = new HashSet<GridNode>();
         bool explosionOccurred = false;
 
@@ -250,8 +255,8 @@ public class GridManager : MonoBehaviour
         
         if (explosionOccurred)
         {
-            EventManager.RaiseOnMarblesExploded(allNodesToExplode.Count);
             yield return StartCoroutine(PlayExplosionAnimations(allNodesToExplode));
+            EventManager.RaiseOnMarblesExploded(allNodesToExplode.Count); 
             Debug.Log(allNodesToExplode.Count + " adet top patlatıldı!");
             connectionManager.UpdateAllConnections();
         }

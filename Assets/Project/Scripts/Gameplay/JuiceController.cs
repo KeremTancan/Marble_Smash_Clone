@@ -4,71 +4,64 @@ using UnityEngine;
 
 public class JuiceController : MonoBehaviour
 {
-    // Bağlantı kurulduğunda oynatılan animasyon (Hızlı Büyü-Küçül)
-    public void PlayConnectionBounce()
+    public void PlayPlacementAnimation(float startScaleMultiplier = 1.2f, float duration = 0.2f)
     {
-        StartCoroutine(BounceEffect(1.2f, 0.2f, null));
+        StartCoroutine(AnimateScaleRoutine(startScaleMultiplier, 1f, duration, null));
     }
 
-    // Patlama öncesi oynatılan animasyon
-    public void PlayGrowAndShrink(float targetScaleMultiplier, float duration, Action onComplete)
+    public void PlayConnectionBounce(float bounceScaleMultiplier = 1.2f, float duration = 0.2f)
     {
-        StartCoroutine(BounceEffect(targetScaleMultiplier, duration, onComplete));
+        StartCoroutine(BounceEffect(bounceScaleMultiplier, duration, null));
     }
 
-    // YENİ EKLENEN FONKSİYON: Yerleştirme animasyonu (Büyükten Küçüğe)
-    public void PlayPlacementAnimation(float startScaleMultiplier, float duration)
+    public void PlayPreExplosionAnimation(float growScaleMultiplier = 1.5f, float duration = 0.3f, Action onComplete = null)
     {
-        StartCoroutine(ShrinkToPlaceEffect(startScaleMultiplier, duration));
+        StartCoroutine(AnimateScaleRoutine(1f, growScaleMultiplier, duration, onComplete));
     }
 
-    private IEnumerator ShrinkToPlaceEffect(float startMultiplier, float duration)
+    private IEnumerator AnimateScaleRoutine(float fromScaleMultiplier, float toScaleMultiplier, float duration, Action onComplete)
     {
         float timer = 0f;
         Vector3 originalScale = transform.localScale;
-        Vector3 startScale = originalScale * startMultiplier;
+        Vector3 fromScale = originalScale * fromScaleMultiplier;
+        Vector3 toScale = originalScale * toScaleMultiplier;
 
-        // Animasyon başlangıcında ölçeği büyüt
-        transform.localScale = startScale;
-
-        // Yavaşça orijinal boyutuna geri dön
         while (timer < duration)
         {
-            transform.localScale = Vector3.Lerp(startScale, originalScale, timer / duration);
+            transform.localScale = Vector3.Lerp(fromScale, toScale, timer / duration);
             timer += Time.deltaTime;
             yield return null;
         }
 
-        // Animasyon sonunda ölçeğin tam olarak doğru olduğundan emin ol
-        transform.localScale = originalScale;
+        transform.localScale = toScale;
+        onComplete?.Invoke();
     }
     
-    // BounceEffect Coroutine'i (Değişiklik yok)
     private IEnumerator BounceEffect(float scaleMultiplier, float duration, Action onComplete)
     {
         float timer = 0f;
         Vector3 originalScale = transform.localScale;
         Vector3 targetScale = originalScale * scaleMultiplier;
+        float halfDuration = duration / 2f;
 
-        // Büyüme fazı
-        while (timer < duration / 2)
+        // Büyüme
+        while (timer < halfDuration)
         {
-            transform.localScale = Vector3.Lerp(originalScale, targetScale, timer / (duration / 2));
+            transform.localScale = Vector3.Lerp(originalScale, targetScale, timer / halfDuration);
             timer += Time.deltaTime;
             yield return null;
         }
 
-        // Küçülme/Geri Dönme fazı
+        // Küçülme
         timer = 0f;
-        while (timer < duration / 2)
+        while (timer < halfDuration)
         {
-            transform.localScale = Vector3.Lerp(targetScale, originalScale, timer / (duration / 2));
+            transform.localScale = Vector3.Lerp(targetScale, originalScale, timer / halfDuration);
             timer += Time.deltaTime;
             yield return null;
         }
 
         transform.localScale = originalScale;
-        
         onComplete?.Invoke();
     }
 }

@@ -68,7 +68,7 @@ public class ConnectionManager : MonoBehaviour
             var juiceController = node.PlacedMarble.GetComponent<JuiceController>();
             if (juiceController != null)
             {
-                juiceController.PlayGrowAndShrink(1.2f, 0.2f, null);
+                juiceController.PlayConnectionBounce();
                 
                 _animatedNodesThisFrame.Add(node);
             }
