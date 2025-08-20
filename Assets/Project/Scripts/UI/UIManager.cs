@@ -50,6 +50,18 @@ public class UIManager : MonoBehaviour
     [Header("Oyun Sonu Butonları")]
     [SerializeField] private Button nextLevelButton;
     [SerializeField] private Button restartButton;
+    [SerializeField] private Button restartButtonS;
+    
+    [Header("Ayarlar Paneli")]
+    [SerializeField] private Button settingsButton;
+    [SerializeField] private GameObject settingsPanel;
+    [SerializeField] private Button closeSettingsButton;
+    [SerializeField] private Button soundToggleButton;
+    [SerializeField] private Button vibrationToggleButton;
+    
+    [Header("Açık/Kapalı Görselleri")]
+    [SerializeField] private Sprite toggleOnSprite;
+    [SerializeField] private Sprite toggleOffSprite;
 
     private int _currentCoins;
     private int _currentLevel;
@@ -87,7 +99,52 @@ public class UIManager : MonoBehaviour
         if (fireworkButton != null) fireworkButton.onClick.AddListener(OnFireworkButtonClicked);
         if (nextLevelButton != null) nextLevelButton.onClick.AddListener(OnNextLevelClicked);
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
+        if (restartButtonS != null) restartButtonS.onClick.AddListener(OnRestartClicked);
         if (cancelFireworkButton != null) cancelFireworkButton.onClick.AddListener(OnCancelFireworkClicked);
+        if (settingsButton != null) settingsButton.onClick.AddListener(ToggleSettingsPanel);
+        if (closeSettingsButton != null) closeSettingsButton.onClick.AddListener(ToggleSettingsPanel);
+        if (soundToggleButton != null) soundToggleButton.onClick.AddListener(ToggleSound);
+        if (vibrationToggleButton != null) vibrationToggleButton.onClick.AddListener(ToggleVibration);
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        UpdateSettingsUI();
+    }
+    
+    private void ToggleSettingsPanel()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(!settingsPanel.activeSelf);
+        }
+    }
+
+    private void ToggleSound()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        bool newSoundState = !AudioManager.Instance.IsSoundEnabled;
+        AudioManager.Instance.ToggleSound(newSoundState);
+        UpdateSettingsUI();
+    }
+
+    private void ToggleVibration()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        bool newVibrationState = !AudioManager.Instance.IsVibrationEnabled;
+        AudioManager.Instance.ToggleVibration(newVibrationState);
+        UpdateSettingsUI();
+    }
+
+    private void UpdateSettingsUI()
+    {
+        if (soundToggleButton != null && toggleOnSprite != null && toggleOffSprite != null)
+        {
+            soundToggleButton.image.sprite = AudioManager.Instance.IsSoundEnabled ? toggleOnSprite : toggleOffSprite;
+        }
+
+        if (vibrationToggleButton != null && toggleOnSprite != null && toggleOffSprite != null)
+        {
+            vibrationToggleButton.image.sprite = AudioManager.Instance.IsVibrationEnabled ? toggleOnSprite : toggleOffSprite;
+        }
     }
     
     private void OnRefreshShapesClicked()
