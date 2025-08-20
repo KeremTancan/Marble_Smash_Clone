@@ -26,51 +26,51 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject levelFailedPanel;
     [SerializeField] private TextMeshProUGUI rewardText; 
 
-    [Header("Yenileme Butonu Elemanları")]
+    [Header("Butonlar")]
     [SerializeField] private Button refreshShapesButton;
+    [SerializeField] private Button fireworkButton;
+    [SerializeField] private Button cancelFireworkButton;
+    [SerializeField] private Button nextLevelButton;
+    [SerializeField] private Button restartButton;
+    [SerializeField] private Button restartButtonS;
+    [SerializeField] private Button settingsButton;
+    [SerializeField] private Button closeSettingsButton;
+    [SerializeField] private Button soundToggleButton;
+    [SerializeField] private Button vibrationToggleButton;
+
+    [Header("Diğer UI Elemanları")]
+    [SerializeField] private GameObject settingsPanel;
     [SerializeField] private GameObject refreshCountParent;
     [SerializeField] private TextMeshProUGUI refreshCountText;
     [SerializeField] private GameObject refreshCostParent;
     [SerializeField] private TextMeshProUGUI refreshCostText;
     [SerializeField] private GameObject refreshLockParent;
     [SerializeField] private TextMeshProUGUI refreshLockText;
-
-    [Header("Roket Butonu Elemanları")]
-    [SerializeField] private Button fireworkButton;
     [SerializeField] private GameObject fireworkCountParent;
     [SerializeField] private TextMeshProUGUI fireworkCountText;
     [SerializeField] private GameObject fireworkCostParent;
     [SerializeField] private TextMeshProUGUI fireworkCostText;
     [SerializeField] private GameObject fireworkLockParent;
     [SerializeField] private TextMeshProUGUI fireworkLockText;
-    
-    [Header("Roket Modu UI")]
-    [SerializeField] private Button cancelFireworkButton;
     [SerializeField] private GameObject fireworkModePanel;
-
-    [Header("Oyun Sonu Butonları")]
-    [SerializeField] private Button nextLevelButton;
-    [SerializeField] private Button restartButton;
-    [SerializeField] private Button restartButtonS;
-    
-    [Header("Ayarlar Paneli")]
-    [SerializeField] private Button settingsButton;
-    [SerializeField] private GameObject settingsPanel;
-    [SerializeField] private Button closeSettingsButton;
-    [SerializeField] private Button soundToggleButton;
-    [SerializeField] private Button vibrationToggleButton;
-    
-    [Header("Açık/Kapalı Görselleri")]
     [SerializeField] private Sprite toggleOnSprite;
     [SerializeField] private Sprite toggleOffSprite;
 
     private int _currentCoins;
     private int _currentLevel;
-    private bool _isRefreshButtonOnCooldown = false;
-    private bool _isFireworkButtonOnCooldown = false;
-    private bool _isSettingsButtonOnCooldown = false;
+    private bool _isCooldownActive = false;
     private readonly WaitForSeconds _buttonCooldown = new WaitForSeconds(0.1f);
-
+    private void OnDisable()
+    {
+        EventManager.OnLevelStarted -= HandleLevelStart;
+        EventManager.OnCurrencyUpdated -= UpdateCurrencyText;
+        EventManager.OnPowerUpCountChanged -= OnPowerUpCountChanged;
+        EventManager.OnLevelCompleted -= ShowLevelCompletePanel;
+        EventManager.OnRewardCollected -= UpdateRewardText;
+        EventManager.OnLevelFailed -= ShowLevelFailedPanel;
+        EventManager.OnFireworkModeChanged -= ToggleFireworkPanel;
+        EventManager.OnScoreUpdated -= UpdateScoreUI;
+    }
     private void OnEnable()
     {
         EventManager.OnLevelStarted += HandleLevelStart;
@@ -83,153 +83,102 @@ public class UIManager : MonoBehaviour
         EventManager.OnScoreUpdated += UpdateScoreUI;
     }
 
-    private void OnDisable()
-    {
-        EventManager.OnLevelStarted -= HandleLevelStart;
-        EventManager.OnCurrencyUpdated -= UpdateCurrencyText;
-        EventManager.OnPowerUpCountChanged -= OnPowerUpCountChanged;
-        EventManager.OnLevelCompleted -= ShowLevelCompletePanel;
-        EventManager.OnRewardCollected -= UpdateRewardText;
-        EventManager.OnLevelFailed -= ShowLevelFailedPanel;
-        EventManager.OnFireworkModeChanged -= ToggleFireworkPanel;
-        EventManager.OnScoreUpdated -= UpdateScoreUI;
-    }
-
     void Start()
     {
-        if (refreshShapesButton != null) refreshShapesButton.onClick.AddListener(OnRefreshShapesClicked);
-        if (fireworkButton != null) fireworkButton.onClick.AddListener(OnFireworkButtonClicked);
-        if (nextLevelButton != null) nextLevelButton.onClick.AddListener(OnNextLevelClicked);
-        if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
-        if (restartButtonS != null) restartButtonS.onClick.AddListener(OnRestartClicked);
-        if (cancelFireworkButton != null) cancelFireworkButton.onClick.AddListener(OnCancelFireworkClicked);
-        if (settingsButton != null) settingsButton.onClick.AddListener(OnSettingsButtonClicked);
-        if (closeSettingsButton != null) closeSettingsButton.onClick.AddListener(OnSettingsButtonClicked);
-        if (soundToggleButton != null) soundToggleButton.onClick.AddListener(ToggleSound);
-        if (vibrationToggleButton != null) vibrationToggleButton.onClick.AddListener(ToggleVibration);
+        AddButtonListener(refreshShapesButton, OnRefreshShapesClicked);
+        AddButtonListener(fireworkButton, OnFireworkButtonClicked);
+        AddButtonListener(nextLevelButton, OnNextLevelClicked);
+        AddButtonListener(restartButton, OnRestartClicked);
+        AddButtonListener(restartButtonS, OnRestartClicked);
+        AddButtonListener(cancelFireworkButton, OnCancelFireworkClicked);
+        AddButtonListener(settingsButton, ToggleSettingsPanel);
+        AddButtonListener(closeSettingsButton, ToggleSettingsPanel);
+        AddButtonListener(soundToggleButton, ToggleSound);
+        AddButtonListener(vibrationToggleButton, ToggleVibration);
+
         if (settingsPanel != null) settingsPanel.SetActive(false);
         UpdateSettingsUI();
     }
-    
-    private void OnSettingsButtonClicked()
+    private void AddButtonListener(Button button, System.Action action)
     {
-        if (_isSettingsButtonOnCooldown) return;
-        StartCoroutine(SettingsButtonCooldown());
-        
-        ToggleSettingsPanel();
+        if (button != null)
+        {
+            button.onClick.AddListener(() => HandleButtonClick(action));
+        }
     }
-    private IEnumerator SettingsButtonCooldown()
-    {
-        _isSettingsButtonOnCooldown = true;
-        settingsButton.interactable = false;
-        if(closeSettingsButton != null) closeSettingsButton.interactable = false;
 
+    private void HandleButtonClick(System.Action actionToExecute)
+    {
+        if (_isCooldownActive) return;
+        StartCoroutine(StartCooldown());
+        AudioManager.Instance.PlayButtonClickSound();
+        actionToExecute?.Invoke();
+    }
+
+    private IEnumerator StartCooldown()
+    {
+        _isCooldownActive = true;
         yield return _buttonCooldown; 
-
-        _isSettingsButtonOnCooldown = false;
-        settingsButton.interactable = true;
-        if(closeSettingsButton != null) closeSettingsButton.interactable = true;
+        _isCooldownActive = false;
     }
+    
     private void ToggleSettingsPanel()
     {
-        AudioManager.Instance.PlayButtonClickSound();
         if (settingsPanel != null)
         {
             bool isPanelActive = !settingsPanel.activeSelf;
             settingsPanel.SetActive(isPanelActive);
-
-            if (inputManager != null)
-            {
-                if (isPanelActive)
-                {
-                    inputManager.enabled = false;
-                }
-                else
-                {
-                    inputManager.enabled = true;
-                }
-            }
+            inputManager.enabled = !isPanelActive;
         }
     }
-
     private void ToggleSound()
     {
-        AudioManager.Instance.PlayButtonClickSound();
         bool newSoundState = !AudioManager.Instance.IsSoundEnabled;
         AudioManager.Instance.ToggleSound(newSoundState);
         UpdateSettingsUI();
     }
-
     private void ToggleVibration()
     {
-        AudioManager.Instance.PlayButtonClickSound();
         bool newVibrationState = !AudioManager.Instance.IsVibrationEnabled;
         AudioManager.Instance.ToggleVibration(newVibrationState);
         UpdateSettingsUI();
     }
+    private void OnRefreshShapesClicked()
+    {
+        if (powerUpManager.TryUsePowerUp(refreshPowerUpData))
+        {
+            shapeManager.RefreshShapeQueue();
+        }
+    }
+    private void OnFireworkButtonClicked()
+    {
+        powerUpManager.ActivateFireworkMode();
+    }
+    private void OnNextLevelClicked()
+    {
+         gameManager.LoadNextLevel();
+    }
+    private void OnRestartClicked()
+    {
+        gameManager.RestartLevel();
+    }
+    private void OnCancelFireworkClicked()
+    {
+        powerUpManager.DeactivateFireworkMode();
+    }
 
+    #region Değişmeyen Kodlar
     private void UpdateSettingsUI()
     {
         if (soundToggleButton != null && toggleOnSprite != null && toggleOffSprite != null)
         {
             soundToggleButton.image.sprite = AudioManager.Instance.IsSoundEnabled ? toggleOnSprite : toggleOffSprite;
         }
-
         if (vibrationToggleButton != null && toggleOnSprite != null && toggleOffSprite != null)
         {
             vibrationToggleButton.image.sprite = AudioManager.Instance.IsVibrationEnabled ? toggleOnSprite : toggleOffSprite;
         }
     }
-    
-    private void OnRefreshShapesClicked()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        if (_isRefreshButtonOnCooldown) return;
-        StartCoroutine(RefreshButtonCooldown());
-
-        if (powerUpManager.TryUsePowerUp(refreshPowerUpData))
-        {
-            shapeManager.RefreshShapeQueue();
-        }
-        else
-        {
-            UpdateAllPowerUpButtons();
-        }
-    }
-    private void OnFireworkButtonClicked()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        if (_isFireworkButtonOnCooldown) return;
-        powerUpManager.ActivateFireworkMode();
-        StartCoroutine(FireworkButtonCooldown());
-    }
-
-    private IEnumerator RefreshButtonCooldown()
-    {
-        _isRefreshButtonOnCooldown = true;
-        refreshShapesButton.interactable = false; 
-        
-        yield return _buttonCooldown; 
-        
-        _isRefreshButtonOnCooldown = false;
-        UpdateAllPowerUpButtons();
-    }
-
-    private IEnumerator FireworkButtonCooldown()
-    {
-        _isFireworkButtonOnCooldown = true;
-        fireworkButton.interactable = false;
-
-        yield return _buttonCooldown; 
-
-        _isFireworkButtonOnCooldown = false;
-        if(!powerUpManager.IsFireworkModeActive)
-        {
-            UpdateAllPowerUpButtons();
-        }
-    }
-
-    #region Değişmeyen Kodlar
     private void HandleLevelStart(int levelID)
     {
         _currentLevel = levelID;
@@ -251,19 +200,12 @@ public class UIManager : MonoBehaviour
     }
     private void UpdateAllPowerUpButtons()
     {
-        if (!_isRefreshButtonOnCooldown)
-        {
-            UpdateButtonState(refreshPowerUpData, refreshShapesButton, refreshLockParent, refreshLockText, refreshCountParent, refreshCountText, refreshCostParent, refreshCostText);
-        }
-        if (!_isFireworkButtonOnCooldown)
-        {
-            UpdateButtonState(fireworkPowerUpData, fireworkButton, fireworkLockParent, fireworkLockText, fireworkCountParent, fireworkCountText, fireworkCostParent, fireworkCostText);
-        }
+        UpdateButtonState(refreshPowerUpData, refreshShapesButton, refreshLockParent, refreshLockText, refreshCountParent, refreshCountText, refreshCostParent, refreshCostText);
+        UpdateButtonState(fireworkPowerUpData, fireworkButton, fireworkLockParent, fireworkLockText, fireworkCountParent, fireworkCountText, fireworkCostParent, fireworkCostText);
     }
     private void UpdateButtonState(PowerUpData_SO data, Button button, GameObject lockParent, TextMeshProUGUI lockText, GameObject countParent, TextMeshProUGUI countText, GameObject costParent, TextMeshProUGUI costText)
     {
         if (data == null || button == null) return;
-
         if (_currentLevel < data.UnlockLevel)
         {
             lockParent.SetActive(true);
@@ -273,10 +215,8 @@ public class UIManager : MonoBehaviour
             if (lockText != null) lockText.text = $"LV {data.UnlockLevel}";
             return;
         }
-        
         lockParent.SetActive(false);
         int count = powerUpManager.GetPowerUpCount(data.PowerUpID);
-
         if (count > 0)
         {
             countParent.SetActive(true);
@@ -292,23 +232,6 @@ public class UIManager : MonoBehaviour
             button.interactable = (_currentCoins >= data.Cost);
         }
     }
-
-    private void OnNextLevelClicked()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-         gameManager.LoadNextLevel();
-    }
-    private void OnRestartClicked()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        gameManager.RestartLevel();
-    }
-
-    private void OnCancelFireworkClicked()
-    {
-        AudioManager.Instance.PlayButtonClickSound();
-        powerUpManager.DeactivateFireworkMode();
-    } 
     private void ToggleFireworkPanel(bool isActive) 
     {
         fireworkModePanel?.SetActive(isActive);
