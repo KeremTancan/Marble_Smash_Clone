@@ -64,6 +64,7 @@ public class GameManager : MonoBehaviour
 
         _currentState = GameState.LevelComplete;
         inputManager.enabled = false;
+        AudioManager.Instance.PlayLevelCompleteSound();
     
         LevelData_SO currentLevelData = levelManager.GetCurrentLevelData();
         if (currentLevelData != null)
@@ -78,6 +79,7 @@ public class GameManager : MonoBehaviour
         if (_currentState != GameState.Playing) return;
         _currentState = GameState.LevelFailed;
         inputManager.enabled = false;
+        AudioManager.Instance.PlayLevelFailedSound();
     }
 
     public void RestartLevel()

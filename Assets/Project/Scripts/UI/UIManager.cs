@@ -92,6 +92,7 @@ public class UIManager : MonoBehaviour
     
     private void OnRefreshShapesClicked()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         if (_isRefreshButtonOnCooldown) return;
         StartCoroutine(RefreshButtonCooldown());
 
@@ -106,6 +107,7 @@ public class UIManager : MonoBehaviour
     }
     private void OnFireworkButtonClicked()
     {
+        AudioManager.Instance.PlayButtonClickSound();
         if (_isFireworkButtonOnCooldown) return;
         powerUpManager.ActivateFireworkMode();
         StartCoroutine(FireworkButtonCooldown());
@@ -199,9 +201,23 @@ public class UIManager : MonoBehaviour
             button.interactable = (_currentCoins >= data.Cost);
         }
     }
-    private void OnNextLevelClicked() => gameManager.LoadNextLevel();
-    private void OnRestartClicked() => gameManager.RestartLevel();
-    private void OnCancelFireworkClicked() => powerUpManager.DeactivateFireworkMode();
+
+    private void OnNextLevelClicked()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+         gameManager.LoadNextLevel();
+    }
+    private void OnRestartClicked()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        gameManager.RestartLevel();
+    }
+
+    private void OnCancelFireworkClicked()
+    {
+        AudioManager.Instance.PlayButtonClickSound();
+        powerUpManager.DeactivateFireworkMode();
+    } 
     private void ToggleFireworkPanel(bool isActive) 
     {
         fireworkModePanel?.SetActive(isActive);

@@ -146,6 +146,7 @@ public class GridManager : MonoBehaviour
                 juiceController.PlayPlacementAnimation();
             }
         }
+        AudioManager.Instance.PlayMarblePlaceSound();
         Destroy(shape.gameObject);
         StartCoroutine(ProcessPlacementSequence(placedNodes));
     }
@@ -206,6 +207,8 @@ public class GridManager : MonoBehaviour
                     Destroy(marble.gameObject);
                     capturedNode.SetVacant();
                     animationsPending--; 
+                    AudioManager.Instance.PlayExplosionSound();
+                    AudioManager.Instance.TriggerHaptics();
                 });
             }
             else
