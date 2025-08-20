@@ -13,6 +13,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip buttonClickClip;
     [SerializeField] private AudioClip levelCompleteClip;
     [SerializeField] private AudioClip levelFailedClip;
+    [SerializeField] private AudioClip holdMarbleClip;
 
     private void Awake()
     {
@@ -36,7 +37,9 @@ public class AudioManager : MonoBehaviour
     public void PlayExplosionSound() => PlaySound(explosionClip);
     public void PlayButtonClickSound() => PlaySound(buttonClickClip);
     public void PlayLevelCompleteSound() => PlaySound(levelCompleteClip);
-    public void PlayLevelFailedSound() => PlaySound(levelFailedClip);
+    public void PlayLevelFailedSound() => PlaySound(levelFailedClip);   
+    
+    public void PlayHoldMarbleSound() => PlaySound(holdMarbleClip);
     
     public void TriggerHaptics()
     {

@@ -35,6 +35,7 @@ public class Rocket : MonoBehaviour
             if (_gridManager != null)
             {
                 _gridManager.ExplodeMarble(marble);
+                AudioManager.Instance.PlayExplosionSound();
                 fxManager.PlayExplosionEffect(marble.transform.position,marble.MarbleColor);
             }
         }

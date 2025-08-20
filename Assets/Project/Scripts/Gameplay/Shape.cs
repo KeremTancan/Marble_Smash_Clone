@@ -73,6 +73,7 @@ public class Shape : MonoBehaviour
         OriginalParent = transform.parent;
         
         _activeGhost = GhostPoolManager.Instance.GetGhost();
+        AudioManager.Instance.PlayHoldMarbleSound();
         _activeGhost.Initialize(this);
         
         _activeGhost.gameObject.SetActive(false);
@@ -96,6 +97,7 @@ public class Shape : MonoBehaviour
         else
         {
             RunCoroutine(ReturnRoutine());
+            AudioManager.Instance.PlayMarblePlaceSound();
         }
         _lastClosestNode = null;
     }

@@ -110,8 +110,6 @@ public class GridManager : MonoBehaviour
         {
             GridNode currentNode = nodesToVisit.Dequeue();
             connectedNodes.Add(currentNode);
-            
-            // DÜZELTME 3: Script içindeki diğer çağrıyı da yeni metoda göre güncelle
             GetNeighbors(currentNode, _reusableNeighborList);
             foreach (GridNode neighbor in _reusableNeighborList)
             {
@@ -265,7 +263,7 @@ public class GridManager : MonoBehaviour
             newRocket.transform.position = startNode.transform.position; 
             newRocket.Launch(direction, this);
         }
-
+        AudioManager.Instance.PlayExplosionSound();
         ExplodeMarble(startNode.PlacedMarble);
     }
     public void ExplodeMarble(Marble marble)
