@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -52,6 +53,9 @@ public class UIManager : MonoBehaviour
 
     private int _currentCoins;
     private int _currentLevel;
+    private bool _isRefreshButtonOnCooldown = false;
+    private bool _isFireworkButtonOnCooldown = false;
+    private readonly WaitForSeconds _buttonCooldown = new WaitForSeconds(0.5f);
 
     private void OnEnable()
     {
@@ -85,7 +89,54 @@ public class UIManager : MonoBehaviour
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
         if (cancelFireworkButton != null) cancelFireworkButton.onClick.AddListener(OnCancelFireworkClicked);
     }
+    
+    private void OnRefreshShapesClicked()
+    {
+        if (_isRefreshButtonOnCooldown) return;
+        StartCoroutine(RefreshButtonCooldown());
 
+        if (powerUpManager.TryUsePowerUp(refreshPowerUpData))
+        {
+            shapeManager.RefreshShapeQueue();
+        }
+        else
+        {
+            UpdateAllPowerUpButtons();
+        }
+    }
+    private void OnFireworkButtonClicked()
+    {
+        if (_isFireworkButtonOnCooldown) return;
+        powerUpManager.ActivateFireworkMode();
+        StartCoroutine(FireworkButtonCooldown());
+    }
+
+    private IEnumerator RefreshButtonCooldown()
+    {
+        _isRefreshButtonOnCooldown = true;
+        refreshShapesButton.interactable = false; 
+        
+        yield return _buttonCooldown; 
+        
+        _isRefreshButtonOnCooldown = false;
+        UpdateAllPowerUpButtons();
+    }
+
+    private IEnumerator FireworkButtonCooldown()
+    {
+        _isFireworkButtonOnCooldown = true;
+        fireworkButton.interactable = false;
+
+        yield return _buttonCooldown; 
+
+        _isFireworkButtonOnCooldown = false;
+        if(!powerUpManager.IsFireworkModeActive)
+        {
+            UpdateAllPowerUpButtons();
+        }
+    }
+
+    #region Değişmeyen Kodlar
     private void HandleLevelStart(int levelID)
     {
         _currentLevel = levelID;
@@ -98,7 +149,6 @@ public class UIManager : MonoBehaviour
         }
         UpdateAllPowerUpButtons();
     }
-    
     private void OnPowerUpCountChanged(string powerUpID, int newCount) => UpdateAllPowerUpButtons();
     private void UpdateCurrencyText(int newAmount)
     {
@@ -106,13 +156,17 @@ public class UIManager : MonoBehaviour
         if(currencyText != null) currencyText.text = newAmount.ToString();
         UpdateAllPowerUpButtons();
     }
-    
     private void UpdateAllPowerUpButtons()
     {
-        UpdateButtonState(refreshPowerUpData, refreshShapesButton, refreshLockParent, refreshLockText, refreshCountParent, refreshCountText, refreshCostParent, refreshCostText);
-        UpdateButtonState(fireworkPowerUpData, fireworkButton, fireworkLockParent, fireworkLockText, fireworkCountParent, fireworkCountText, fireworkCostParent, fireworkCostText);
+        if (!_isRefreshButtonOnCooldown)
+        {
+            UpdateButtonState(refreshPowerUpData, refreshShapesButton, refreshLockParent, refreshLockText, refreshCountParent, refreshCountText, refreshCostParent, refreshCostText);
+        }
+        if (!_isFireworkButtonOnCooldown)
+        {
+            UpdateButtonState(fireworkPowerUpData, fireworkButton, fireworkLockParent, fireworkLockText, fireworkCountParent, fireworkCountText, fireworkCostParent, fireworkCostText);
+        }
     }
-    
     private void UpdateButtonState(PowerUpData_SO data, Button button, GameObject lockParent, TextMeshProUGUI lockText, GameObject countParent, TextMeshProUGUI countText, GameObject costParent, TextMeshProUGUI costText)
     {
         if (data == null || button == null) return;
@@ -145,24 +199,17 @@ public class UIManager : MonoBehaviour
             button.interactable = (_currentCoins >= data.Cost);
         }
     }
-
-    private void OnRefreshShapesClicked()
-    {
-        if (powerUpManager.TryUsePowerUp(refreshPowerUpData))
-        {
-            shapeManager.RefreshShapeQueue();
-        }
-    }
-
-    private void OnFireworkButtonClicked()
-    {
-        powerUpManager.ActivateFireworkMode();
-    }
-    
     private void OnNextLevelClicked() => gameManager.LoadNextLevel();
     private void OnRestartClicked() => gameManager.RestartLevel();
     private void OnCancelFireworkClicked() => powerUpManager.DeactivateFireworkMode();
-    private void ToggleFireworkPanel(bool isActive) => fireworkModePanel?.SetActive(isActive);
+    private void ToggleFireworkPanel(bool isActive) 
+    {
+        fireworkModePanel?.SetActive(isActive);
+        if(!isActive)
+        {
+           UpdateAllPowerUpButtons();
+        }
+    }
     private void UpdateRewardText(int rewardAmount)
     {
         if (rewardText != null)
@@ -183,7 +230,6 @@ public class UIManager : MonoBehaviour
             scoreSlider.value = displayScore;
         }
     }
-
     private void ShowLevelCompletePanel()
     {
         if (levelCompletePanel != null)
@@ -192,7 +238,6 @@ public class UIManager : MonoBehaviour
             Canvas.ForceUpdateCanvases();
         }
     }
-
     private void ShowLevelFailedPanel()
     {
         if (levelFailedPanel != null)
@@ -201,4 +246,5 @@ public class UIManager : MonoBehaviour
             Canvas.ForceUpdateCanvases();
         }
     }
+    #endregion
 }
