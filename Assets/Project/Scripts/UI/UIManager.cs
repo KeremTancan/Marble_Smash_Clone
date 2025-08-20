@@ -9,6 +9,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameManager gameManager;
     [SerializeField] private ShapeManager shapeManager;
     [SerializeField] private PowerUpManager powerUpManager;
+    [SerializeField] private InputManager inputManager;
 
     [Header("Güçlendirme Verileri")]
     [SerializeField] private PowerUpData_SO refreshPowerUpData;
@@ -67,7 +68,8 @@ public class UIManager : MonoBehaviour
     private int _currentLevel;
     private bool _isRefreshButtonOnCooldown = false;
     private bool _isFireworkButtonOnCooldown = false;
-    private readonly WaitForSeconds _buttonCooldown = new WaitForSeconds(0.5f);
+    private bool _isSettingsButtonOnCooldown = false;
+    private readonly WaitForSeconds _buttonCooldown = new WaitForSeconds(0.1f);
 
     private void OnEnable()
     {
@@ -101,20 +103,52 @@ public class UIManager : MonoBehaviour
         if (restartButton != null) restartButton.onClick.AddListener(OnRestartClicked);
         if (restartButtonS != null) restartButtonS.onClick.AddListener(OnRestartClicked);
         if (cancelFireworkButton != null) cancelFireworkButton.onClick.AddListener(OnCancelFireworkClicked);
-        if (settingsButton != null) settingsButton.onClick.AddListener(ToggleSettingsPanel);
-        if (closeSettingsButton != null) closeSettingsButton.onClick.AddListener(ToggleSettingsPanel);
+        if (settingsButton != null) settingsButton.onClick.AddListener(OnSettingsButtonClicked);
+        if (closeSettingsButton != null) closeSettingsButton.onClick.AddListener(OnSettingsButtonClicked);
         if (soundToggleButton != null) soundToggleButton.onClick.AddListener(ToggleSound);
         if (vibrationToggleButton != null) vibrationToggleButton.onClick.AddListener(ToggleVibration);
         if (settingsPanel != null) settingsPanel.SetActive(false);
         UpdateSettingsUI();
     }
     
+    private void OnSettingsButtonClicked()
+    {
+        if (_isSettingsButtonOnCooldown) return;
+        StartCoroutine(SettingsButtonCooldown());
+        
+        ToggleSettingsPanel();
+    }
+    private IEnumerator SettingsButtonCooldown()
+    {
+        _isSettingsButtonOnCooldown = true;
+        settingsButton.interactable = false;
+        if(closeSettingsButton != null) closeSettingsButton.interactable = false;
+
+        yield return _buttonCooldown; 
+
+        _isSettingsButtonOnCooldown = false;
+        settingsButton.interactable = true;
+        if(closeSettingsButton != null) closeSettingsButton.interactable = true;
+    }
     private void ToggleSettingsPanel()
     {
         AudioManager.Instance.PlayButtonClickSound();
         if (settingsPanel != null)
         {
-            settingsPanel.SetActive(!settingsPanel.activeSelf);
+            bool isPanelActive = !settingsPanel.activeSelf;
+            settingsPanel.SetActive(isPanelActive);
+
+            if (inputManager != null)
+            {
+                if (isPanelActive)
+                {
+                    inputManager.enabled = false;
+                }
+                else
+                {
+                    inputManager.enabled = true;
+                }
+            }
         }
     }
 
