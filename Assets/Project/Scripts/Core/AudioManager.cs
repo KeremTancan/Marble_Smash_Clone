@@ -14,6 +14,7 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip levelCompleteClip;
     [SerializeField] private AudioClip levelFailedClip;
     [SerializeField] private AudioClip holdMarbleClip;
+    [SerializeField] private AudioClip unlockedNodeClip;
     
     private bool _isSoundEnabled = true;
     private bool _isVibrationEnabled = true;
@@ -47,6 +48,7 @@ public class AudioManager : MonoBehaviour
     public void PlayLevelCompleteSound() => PlaySound(levelCompleteClip);
     public void PlayLevelFailedSound() => PlaySound(levelFailedClip);   
     
+    public void PlayUnlockNodeSound() => PlaySound(unlockedNodeClip);   
     public void PlayHoldMarbleSound() => PlaySound(holdMarbleClip);
     
     public void TriggerHaptics()

@@ -41,6 +41,7 @@ public class GridNode : MonoBehaviour
         
         IsLocked = false;
         if (lockVisual != null) lockVisual.SetActive(false);
+        AudioManager.Instance.PlayUnlockNodeSound();
         Debug.Log($"Node {GridPosition} kilidi açıldı!");
     }
 
