@@ -57,6 +57,20 @@ public class GameManager : MonoBehaviour
         
         EventManager.RaiseOnLevelStarted(displayLevel);
     }
+    
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            PlayerPrefs.Save();
+            Debug.Log("Oyun duraklatıldı, tüm veriler kaydedildi.");
+        }
+    }
+    private void OnApplicationQuit()
+    {
+        PlayerPrefs.Save();
+        Debug.Log("Oyun kapatılıyor, tüm veriler kaydedildi.");
+    }
 
     private void HandleLevelComplete()
     {
